@@ -1,0 +1,20 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+asyncpg
+pydantic
+pydantic-settings
+# Celery & Redis
+celery
+redis
+# HTTP & Auth
+httpx
+python-multipart
+authlib
+itsdangerous
+# AI & Audio
+openai
+ffmpeg-python
+yt-dlp
+feedparser
+beautifulsoup4

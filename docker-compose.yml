@@ -1,0 +1,108 @@
+services:
+  # 1. BAZA DANYCH
+  db:
+    image: postgres:16-alpine
+    container_name: radio_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - radio_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. KOLEJKA ZADAŃ & CACHE
+  redis:
+    image: redis:7-alpine
+    container_name: radio_redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - radio_net
+
+  # 3. BACKEND API (FastAPI)
+  backend-api:
+    build: ./backend
+    container_name: radio_api
+    restart: always
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend/src:/app/src
+      - audio_temp:/app/audio_temp
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - OAUTHLIB_INSECURE_TRANSPORT=1 # <--- DODAJ TĘ LINIĘ
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - radio_net
+
+  # 4. BACKEND WORKER (Celery - AI, YouTube, AzuraCast Uploads)
+  backend-worker:
+    build: ./backend
+    container_name: radio_worker
+    restart: always
+    # Uruchamia workera oraz 'beat' (harmonogram zadań cyklicznych)
+    command: celery -A src.tasks worker --beat --loglevel=info
+    volumes:
+      - ./backend/src:/app/src
+      - audio_temp:/app/audio_temp
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - db
+    networks:
+      - radio_net
+
+  # 5. FRONTEND (Node/Vite)
+  frontend:
+    build: ./frontend
+    container_name: radio_frontend
+    restart: always
+    # W trybie dev, Vite serwuje pliki. W produkcji zrobilibyśmy build statyczny.
+    command: npm run dev -- --host
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - radio_net
+
+  # 6. NGINX (Reverse Proxy)
+  nginx:
+    image: nginx:alpine
+    container_name: radio_nginx
+    restart: always
+    ports:
+      - "${APP_PORT}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend-api
+    networks:
+      - radio_net
+
+volumes:
+  postgres_data:
+  redis_data:
+  audio_temp: # Współdzielony folder na pliki MP3 generowane przez Workera
+
+networks:
+  radio_net:
+    driver: bridge
