@@ -67,6 +67,57 @@ export const GlobalAudioProvider = ({ children }) => {
     }
   }, [radioNowPlaying]);
 
+  useEffect(() => {
+    if (nowPlaying.title && nowPlaying.artist) {
+      const title = `${nowPlaying.title} - ${nowPlaying.artist} | ONLY YES`;
+      document.title = title;
+
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: nowPlaying.title,
+          artist: nowPlaying.artist,
+          album: "ONLY YES",
+          artwork: nowPlaying.thumbnail
+            ? [
+                {
+                  src: nowPlaying.thumbnail,
+                  sizes: "512x512",
+                  type: "image/png",
+                },
+              ]
+            : [],
+        });
+      }
+    } else {
+      document.title = "ONLY YES";
+    }
+  }, [nowPlaying.title, nowPlaying.artist, nowPlaying.thumbnail]);
+
+  useEffect(() => {
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.setActionHandler("play", () => {
+        if (nowPlaying.streamUrl) {
+          setIsPlaying(true);
+        }
+      });
+
+      navigator.mediaSession.setActionHandler("pause", () => {
+        setIsPlaying(false);
+      });
+
+      return () => {
+        navigator.mediaSession.setActionHandler("play", null);
+        navigator.mediaSession.setActionHandler("pause", null);
+      };
+    }
+  }, [nowPlaying.streamUrl]);
+
+  useEffect(() => {
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+    }
+  }, [isPlaying]);
+
   const togglePlay = () => {
     if (!nowPlaying.streamUrl) {
       alert("Stream URL nie jest dostępny");
