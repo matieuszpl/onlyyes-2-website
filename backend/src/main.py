@@ -64,7 +64,7 @@ app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://onlyyes.matieusz.pl",
+        "https://onlyyes.pl",
         "http://localhost:9523",
         "http://127.0.0.1:9523",
     ],

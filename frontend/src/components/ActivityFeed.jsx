@@ -20,6 +20,30 @@ const getActivityColor = (type, voteType) => {
   return "text-primary";
 };
 
+const formatTimeAgo = (minutesAgo) => {
+  if (minutesAgo < 1) return "teraz";
+  if (minutesAgo < 60) return `${minutesAgo} min temu`;
+  
+  const hoursAgo = Math.floor(minutesAgo / 60);
+  if (hoursAgo < 24) {
+    return `${hoursAgo} ${hoursAgo === 1 ? "godzinę" : hoursAgo < 5 ? "godziny" : "godzin"} temu`;
+  }
+  
+  const daysAgo = Math.floor(hoursAgo / 24);
+  if (daysAgo < 7) {
+    return `${daysAgo} ${daysAgo === 1 ? "dzień" : "dni"} temu`;
+  }
+  
+  const weeksAgo = Math.floor(daysAgo / 7);
+  if (weeksAgo < 4) {
+    return `${weeksAgo} ${weeksAgo === 1 ? "tydzień" : weeksAgo < 5 ? "tygodnie" : "tygodni"} temu`;
+  }
+  
+  const monthsAgo = Math.floor(daysAgo / 30);
+  if (monthsAgo === 1) return "miesiąc temu";
+  return `${monthsAgo} miesięcy temu`;
+};
+
 export default function ActivityFeed() {
   const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +59,7 @@ export default function ActivityFeed() {
           const Icon = iconMap[item.icon] || Music;
           const timestamp = item.timestamp ? new Date(item.timestamp) : new Date();
           const minutesAgo = Math.floor((Date.now() - timestamp.getTime()) / 60000);
-          const timeText = minutesAgo < 1 ? "teraz" : minutesAgo < 60 ? `${minutesAgo} min temu` : `${Math.floor(minutesAgo / 60)} h temu`;
+          const timeText = formatTimeAgo(minutesAgo);
           
           return {
             id: item.timestamp || Date.now(),

@@ -108,11 +108,11 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.onlyyes.entrypoints=http"
-      - "traefik.http.routers.onlyyes.rule=Host(`onlyyes.matieusz.pl`)"
+      - "traefik.http.routers.onlyyes.rule=Host(`onlyyes.pl`)"
       - "traefik.http.middlewares.onlyyes-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.onlyyes.middlewares=onlyyes-https-redirect"
       - "traefik.http.routers.onlyyes-secure.entrypoints=https"
-      - "traefik.http.routers.onlyyes-secure.rule=Host(`onlyyes.matieusz.pl`)"
+      - "traefik.http.routers.onlyyes-secure.rule=Host(`onlyyes.pl`)"
       - "traefik.http.routers.onlyyes-secure.tls=true"
       - "traefik.http.routers.onlyyes-secure.service=onlyyes"
       - "traefik.http.services.onlyyes.loadbalancer.server.port=80"

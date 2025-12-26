@@ -7,7 +7,7 @@ import { useRadioEvents } from "../contexts/RadioEventsContext";
 import { useAlbumColors } from "../hooks/useAlbumColors";
 
 const DEFAULT_ALBUM_ART =
-  "https://azura.matieusz.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
+  "https://azura.onlyyes.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
 
 function SongItemBackground({ thumbnail }) {
   const colors = useAlbumColors(thumbnail);

@@ -6,7 +6,7 @@ import { useAlbumColors } from "../hooks/useAlbumColors";
 import api from "../api";
 
 const DEFAULT_ALBUM_ART =
-  "https://azura.matieusz.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
+  "https://azura.onlyyes.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
 
 function SongItemBackground({ thumbnail }) {
   const colors = useAlbumColors(thumbnail);
@@ -74,15 +74,38 @@ export default function ChartsArchive() {
             LISTA PRZEBOJÓW
           </h3>
         </div>
-        <select
-          value={selectedPeriod}
-          onChange={(e) => setSelectedPeriod(e.target.value)}
-          className="bg-white/10 border border-white/10 px-3 py-1 font-mono text-xs text-text-primary focus:border-primary focus:outline-none"
-        >
-          <option value="week">TYDZIEŃ</option>
-          <option value="month">MIESIĄC</option>
-          <option value="all">WSZYSTKIE</option>
-        </select>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSelectedPeriod("week")}
+            className={`px-3 py-1 font-mono text-xs border transition-all ${
+              selectedPeriod === "week"
+                ? "bg-primary/20 border-primary text-primary"
+                : "bg-white/10 border-white/10 text-text-primary hover:border-primary/50"
+            }`}
+          >
+            TYDZIEŃ
+          </button>
+          <button
+            onClick={() => setSelectedPeriod("month")}
+            className={`px-3 py-1 font-mono text-xs border transition-all ${
+              selectedPeriod === "month"
+                ? "bg-primary/20 border-primary text-primary"
+                : "bg-white/10 border-white/10 text-text-primary hover:border-primary/50"
+            }`}
+          >
+            MIESIĄC
+          </button>
+          <button
+            onClick={() => setSelectedPeriod("all")}
+            className={`px-3 py-1 font-mono text-xs border transition-all ${
+              selectedPeriod === "all"
+                ? "bg-primary/20 border-primary text-primary"
+                : "bg-white/10 border-white/10 text-text-primary hover:border-primary/50"
+            }`}
+          >
+            WSZYSTKIE
+          </button>
+        </div>
       </div>
 
       {loading ? (

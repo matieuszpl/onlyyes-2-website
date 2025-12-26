@@ -157,36 +157,35 @@ export default function Sidebar({ isOpen, onClose }) {
     </>
   );
 
-  if (onClose) {
-    return (
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={onClose}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
-            />
-            <motion.aside
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 h-full w-64 bg-black/95 backdrop-blur-xl border-r border-white/5 flex-col z-50 md:hidden flex"
-            >
-              {sidebarContent}
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-    );
-  }
-
   return (
-    <aside className="hidden md:flex fixed left-0 top-0 h-full w-56 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col z-30">
-      {sidebarContent}
-    </aside>
+    <>
+      {onClose && (
+        <AnimatePresence>
+          {isOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+              />
+              <motion.aside
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="fixed left-0 top-0 h-full w-64 bg-black/95 backdrop-blur-xl border-r border-white/5 flex-col z-50 md:hidden flex"
+              >
+                {sidebarContent}
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+      )}
+      <aside className="hidden md:flex fixed left-0 top-0 h-full w-56 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col z-30">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

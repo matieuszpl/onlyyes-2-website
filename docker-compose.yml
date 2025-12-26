@@ -34,6 +34,8 @@ services:
     container_name: radio_api
     restart: always
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
     volumes:
       - ./backend/src:/app/src
       - audio_temp:/app/audio_temp
@@ -41,7 +43,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       - CELERY_BROKER_URL=redis://redis:6379/0
-      - OAUTHLIB_INSECURE_TRANSPORT=1 # <--- DODAJ TĘ LINIĘ
+      - OAUTHLIB_INSECURE_TRANSPORT=1
     depends_on:
       db:
         condition: service_healthy
@@ -77,6 +79,8 @@ services:
     restart: always
     # W trybie dev, Vite serwuje pliki. W produkcji zrobilibyśmy build statyczny.
     command: npm run dev -- --host
+    ports:
+      - "5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules

@@ -3,13 +3,26 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "../utils/cn";
 import { useAlbumColors } from "../hooks/useAlbumColors";
 
-const DEFAULT_ALBUM_ART = "https://azura.matieusz.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
+const DEFAULT_ALBUM_ART =
+  "https://azura.onlyyes.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
 
-export default function TrendingCard({ title, artist, position, change, thumbnail }) {
-  const changeIcon = change > 0 ? TrendingUp : change < 0 ? TrendingDown : Minus;
-  const changeColor = change > 0 ? "text-accent-cyan" : change < 0 ? "text-accent-magenta" : "text-text-secondary";
+export default function TrendingCard({
+  title,
+  artist,
+  position,
+  change,
+  thumbnail,
+}) {
+  const changeIcon =
+    change > 0 ? TrendingUp : change < 0 ? TrendingDown : Minus;
+  const changeColor =
+    change > 0
+      ? "text-accent-cyan"
+      : change < 0
+      ? "text-accent-magenta"
+      : "text-text-secondary";
   const colors = useAlbumColors(thumbnail);
-  
+
   return (
     <motion.div
       whileHover={{ scale: 1.02, x: 4 }}
@@ -56,4 +69,3 @@ export default function TrendingCard({ title, artist, position, change, thumbnai
     </motion.div>
   );
 }
-
