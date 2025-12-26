@@ -16,6 +16,7 @@ export const RadioEventsProvider = ({ children }) => {
   const [recentSongs, setRecentSongs] = useState([]);
   const [nextSong, setNextSong] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [listenerId, setListenerId] = useState(null);
 
   const handleEvent = useCallback((event) => {
     try {
@@ -37,6 +38,9 @@ export const RadioEventsProvider = ({ children }) => {
         setNextSong(data.data);
       } else if (data.type === "connected") {
         setIsConnected(true);
+        if (data.listener_id) {
+          setListenerId(data.listener_id);
+        }
       }
     } catch (error) {
       console.error("Error parsing SSE event:", error);
@@ -111,6 +115,7 @@ export const RadioEventsProvider = ({ children }) => {
         recentSongs,
         nextSong,
         isConnected,
+        listenerId,
       }}
     >
       {children}

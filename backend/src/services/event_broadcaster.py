@@ -15,6 +15,7 @@ class ActiveListener:
         self.avatar_url = avatar_url
         self.is_guest = is_guest
         self.last_seen = datetime.now()
+        self.is_playing = False
 
     def to_dict(self):
         return {
@@ -22,7 +23,8 @@ class ActiveListener:
             "user_id": self.user_id,
             "username": self.username,
             "avatar_url": self.avatar_url,
-            "is_guest": self.is_guest
+            "is_guest": self.is_guest,
+            "is_playing": self.is_playing
         }
 
 class EventBroadcaster:
@@ -72,6 +74,11 @@ class EventBroadcaster:
         if listener_id in self.active_listeners:
             self.active_listeners[listener_id].last_seen = datetime.now()
             self._cleanup_inactive()
+    
+    def update_listener_playing_state(self, listener_id: str, is_playing: bool):
+        if listener_id in self.active_listeners:
+            self.active_listeners[listener_id].is_playing = is_playing
+            self.active_listeners[listener_id].last_seen = datetime.now()
     
     def _cleanup_inactive(self):
         now = datetime.now()

@@ -9,6 +9,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { GlobalAudioProvider } from "./contexts/GlobalAudioContext";
 import { RadioEventsProvider } from "./contexts/RadioEventsContext";
 import { ToastProvider } from "./components/ToastContainer";
+import ConnectionNotification from "./components/ConnectionNotification";
 import LayoutManager from "./components/layout/LayoutManager";
 import KioskLayout from "./components/layout/KioskLayout";
 import AnimatedBackground from "./components/AnimatedBackground";
@@ -63,6 +64,7 @@ function App() {
                   <div className="relative z-10 w-full max-w-full">
                     <AppContent />
                   </div>
+                  <ConnectionNotification />
                 </div>
               </BrowserRouter>
             </ToastProvider>

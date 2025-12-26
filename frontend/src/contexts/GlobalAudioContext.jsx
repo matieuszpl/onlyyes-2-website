@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useRadioEvents } from "./RadioEventsContext";
+import api from "../api";
 
 const GlobalAudioContext = createContext();
 
@@ -12,7 +13,7 @@ export const useGlobalAudio = () => {
 };
 
 export const GlobalAudioProvider = ({ children }) => {
-  const { nowPlaying: radioNowPlaying } = useRadioEvents();
+  const { nowPlaying: radioNowPlaying, listenerId } = useRadioEvents();
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(() => {
     const saved = localStorage.getItem("radio_volume");
@@ -27,6 +28,7 @@ export const GlobalAudioProvider = ({ children }) => {
   });
   const [shouldGlitch, setShouldGlitch] = useState(false);
   const audioRef = useRef(null);
+  const wasPlayingRef = useRef(false);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -41,14 +43,31 @@ export const GlobalAudioProvider = ({ children }) => {
     if (!audio) return;
 
     if (isPlaying && nowPlaying.streamUrl) {
+      if (!wasPlayingRef.current && audio.src) {
+        audio.src = nowPlaying.streamUrl;
+        audio.load();
+      }
       audio.play().catch((error) => {
         console.error("Play error:", error);
         setIsPlaying(false);
       });
+      wasPlayingRef.current = true;
     } else {
       audio.pause();
+      wasPlayingRef.current = false;
     }
   }, [isPlaying, nowPlaying.streamUrl]);
+
+  useEffect(() => {
+    if (listenerId !== null) {
+      api.post("/radio/update-playing-state", {
+        listener_id: listenerId,
+        is_playing: isPlaying,
+      }).catch((error) => {
+        console.error("Update playing state error:", error);
+      });
+    }
+  }, [isPlaying, listenerId]);
 
   useEffect(() => {
     if (radioNowPlaying) {

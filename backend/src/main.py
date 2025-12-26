@@ -48,7 +48,10 @@ async def background_xp_tracking():
             await asyncio.sleep(60)
             
             active_listeners = event_broadcaster.get_active_listeners()
-            authenticated_users = [l for l in active_listeners if not l.get("is_guest") and l.get("user_id")]
+            authenticated_users = [
+                l for l in active_listeners 
+                if not l.get("is_guest") and l.get("user_id") and l.get("is_playing", False)
+            ]
             
             if not authenticated_users:
                 continue
@@ -440,7 +443,7 @@ async def radio_events(request: Request, db: AsyncSession = Depends(get_db)):
     async def event_generator():
         queue = await event_broadcaster.connect()
         try:
-            yield "data: {\"type\":\"connected\"}\n\n"
+            yield f"data: {{\"type\":\"connected\",\"listener_id\":\"{listener_id}\"}}\n\n"
             while True:
                 if await request.is_disconnected():
                     break
@@ -481,6 +484,16 @@ async def get_active_listeners():
     """Endpoint do pobierania listy aktualnie słuchających użytkowników"""
     listeners = event_broadcaster.get_active_listeners()
     return {"listeners": listeners}
+
+class UpdatePlayingStateRequest(BaseModel):
+    listener_id: str
+    is_playing: bool
+
+@app.post("/api/radio/update-playing-state")
+async def update_playing_state(request: UpdatePlayingStateRequest):
+    """Endpoint do aktualizacji stanu odtwarzacza"""
+    event_broadcaster.update_listener_playing_state(request.listener_id, request.is_playing)
+    return {"status": "ok"}
 
 @app.post("/api/webhooks/radio-update")
 async def radio_update_webhook(request: Request):
