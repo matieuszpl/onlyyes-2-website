@@ -31,10 +31,15 @@ const changelogData = [
         "Dodano system śledzenia XP i ranking użytkowników",
         "Dodano funkcję aktywnych słuchaczy",
         "Dodano komponent feed aktywności",
+        "Dodano system odznak i osiągnięć",
+        "Dodano powiadomienia o odznakach i awansach rang",
       ],
       "UI/UX": [
         "Ulepszono statystyki użytkowników",
         "Ulepszono komponenty frontendu",
+        "Ulepszono tooltip użytkownika",
+        "Ulepszono sidebar i nawigację",
+        "Ulepszono profil użytkownika",
       ],
       "Poprawki błędów": [
         "Rozszerzono funkcjonalność radia i obsługę połączeń",

@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from .database import Base
 
 class User(Base):
@@ -12,6 +13,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     reputation_score = Column(Integer, default=0) # Punkty za dobry gust
     xp = Column(Integer, default=0) # Punkty doświadczenia
+    featured_badge_id = Column(Integer, ForeignKey("badges.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Suggestion(Base):
@@ -63,3 +65,25 @@ class XpAward(Base):
     xp_amount = Column(Integer, nullable=False)
     award_type = Column(String)  # VOTE, LISTENING
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Badge(Base):
+    __tablename__ = "badges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    icon = Column(String, nullable=True)  # Nazwa ikony lub emoji
+    color = Column(String, nullable=True)  # Kolor w hex
+    auto_award_type = Column(String, nullable=True)  # NIGHT_SHIFT, PLAYLIST_GUARDIAN, MANUAL
+    auto_award_config = Column(Text, nullable=True)  # JSON config dla automatycznego nadawania
+    xp_reward = Column(Integer, default=0)  # XP przyznawane za otrzymanie odznaki
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class UserBadge(Base):
+    __tablename__ = "user_badges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    badge_id = Column(Integer, ForeignKey("badges.id"), nullable=False)
+    awarded_at = Column(DateTime(timezone=True), server_default=func.now())
+    awarded_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # NULL dla automatycznych

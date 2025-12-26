@@ -10,6 +10,7 @@ import { GlobalAudioProvider } from "./contexts/GlobalAudioContext";
 import { RadioEventsProvider } from "./contexts/RadioEventsContext";
 import { ToastProvider } from "./components/ToastContainer";
 import ConnectionNotification from "./components/ConnectionNotification";
+import BadgeNotifications from "./components/BadgeNotifications";
 import LayoutManager from "./components/layout/LayoutManager";
 import KioskLayout from "./components/layout/KioskLayout";
 import AnimatedBackground from "./components/AnimatedBackground";
@@ -25,6 +26,7 @@ import SchedulePage from "./pages/SchedulePage";
 import AdminPanel from "./pages/AdminPanel";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import ChangelogPage from "./pages/ChangelogPage";
+import BadgesPage from "./pages/BadgesPage";
 
 function AppContent() {
   const [searchParams] = useSearchParams();
@@ -47,6 +49,7 @@ function AppContent() {
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/changelog" element={<ChangelogPage />} />
+        <Route path="/badges" element={<BadgesPage />} />
       </Routes>
     </LayoutManager>
   );
@@ -67,6 +70,7 @@ function App() {
                     <AppContent />
                   </div>
                   <ConnectionNotification />
+                  <BadgeNotifications />
                 </div>
               </BrowserRouter>
             </ToastProvider>

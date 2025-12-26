@@ -10,6 +10,7 @@ import {
   Shield,
   Trophy,
   GitBranch,
+  Award,
 } from "lucide-react";
 import TextGlitch from "../TextGlitch";
 
@@ -24,6 +25,7 @@ const routeIcons = {
   "/settings": Settings,
   "/leaderboard": Trophy,
   "/changelog": GitBranch,
+  "/achievements": Award,
 };
 
 const routeTitles = {
@@ -37,6 +39,7 @@ const routeTitles = {
   "/settings": "USTAWIENIA",
   "/leaderboard": "RANKING",
   "/changelog": "CHANGELOG",
+  "/achievements": "OSIĄGNIĘCIA",
 };
 
 export default function PageHeader({ title, icon, subtitle }) {

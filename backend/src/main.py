@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Request, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-from starlette.responses import RedirectResponse, StreamingResponse
+from starlette.responses import RedirectResponse, StreamingResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 from pydantic import BaseModel
@@ -108,6 +109,12 @@ async def background_xp_tracking():
                                     )
                                     db.add(xp_award)
                                     await db.commit()
+                                    
+                                    hour = now.hour
+                                    if hour >= 2 and hour < 5:
+                                        await _check_and_award_badges_internal(user_id, "NIGHT_SHIFT", db)
+                                    
+                                    await _check_and_award_badges_internal(user_id, "LISTENING_TIME", db)
                         break
                     except Exception as e:
                         if attempt < retries - 1:
@@ -139,6 +146,79 @@ async def lifespan(app: FastAPI):
             logger.info("Added xp column to users table")
         
         result = await conn.execute(text("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name='badges'
+        """))
+        badges_table_exists = result.scalar() is not None
+        
+        if not badges_table_exists:
+            await conn.execute(text("""
+                CREATE TABLE badges (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR NOT NULL,
+                    description TEXT,
+                    icon VARCHAR,
+                    color VARCHAR,
+                    auto_award_type VARCHAR,
+                    auto_award_config TEXT,
+                    xp_reward INTEGER DEFAULT 0,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                )
+            """))
+            logger.info("Created badges table")
+        else:
+            result = await conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name='badges' AND column_name='xp_reward'
+            """))
+            xp_reward_exists = result.scalar() is not None
+            if not xp_reward_exists:
+                await conn.execute(text("ALTER TABLE badges ADD COLUMN xp_reward INTEGER DEFAULT 0"))
+                logger.info("Added xp_reward column to badges table")
+        
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='featured_badge_id'
+        """))
+        featured_badge_exists = result.scalar() is not None
+        
+        if not featured_badge_exists:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN featured_badge_id INTEGER"))
+            try:
+                await conn.execute(text("""
+                    ALTER TABLE users 
+                    ADD CONSTRAINT fk_users_featured_badge 
+                    FOREIGN KEY (featured_badge_id) REFERENCES badges(id) ON DELETE SET NULL
+                """))
+            except Exception as e:
+                logger.warning(f"Could not add foreign key constraint (may already exist): {e}")
+            logger.info("Added featured_badge_id column to users table")
+        
+        result = await conn.execute(text("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name='user_badges'
+        """))
+        user_badges_table_exists = result.scalar() is not None
+        
+        if not user_badges_table_exists:
+            await conn.execute(text("""
+                CREATE TABLE user_badges (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    badge_id INTEGER NOT NULL REFERENCES badges(id) ON DELETE CASCADE,
+                    awarded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                    awarded_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+                )
+            """))
+            await conn.execute(text("CREATE INDEX idx_user_badges_user_id ON user_badges(user_id)"))
+            await conn.execute(text("CREATE INDEX idx_user_badges_badge_id ON user_badges(badge_id)"))
+            logger.info("Created user_badges table")
+        
+        result = await conn.execute(text("""
             SELECT column_name 
             FROM information_schema.columns 
             WHERE table_name='votes' AND column_name='xp_awarded'
@@ -160,20 +240,190 @@ async def lifespan(app: FastAPI):
         if not xp_awards_exists:
             await conn.run_sync(Base.metadata.create_all)
             logger.info("Created xp_awards table")
+        
+        await initialize_default_badges(conn)
     
     task1 = asyncio.create_task(background_polling())
     task2 = asyncio.create_task(background_xp_tracking())
     yield
     task1.cancel()
     task2.cancel()
-    try:
-        await task1
-        await task2
-    except asyncio.CancelledError:
-        pass
-    await engine.dispose()
+
+async def initialize_default_badges(conn):
+    """Inicjalizuje domyślne odznaki w bazie danych"""
+    from sqlalchemy import text
+    
+    default_badges = [
+        {
+            "name": "Nocna Zmiana",
+            "description": "Za słuchanie radia między 2:00 a 5:00 rano",
+            "icon": "🌙",
+            "color": "#4a5568",
+            "auto_award_type": "NIGHT_SHIFT",
+            "xp_reward": 50
+        },
+        {
+            "name": "Strażnik Playlisty",
+            "description": "Za zgłoszenie błędu w metadanych lub uszkodzonego pliku",
+            "icon": "🛡️",
+            "color": "#3182ce",
+            "auto_award_type": "PLAYLIST_GUARDIAN",
+            "xp_reward": 100
+        },
+        {
+            "name": "Współtwórca Playlisty",
+            "description": "Za pomoc w tworzeniu playlisty radia (proponowanie piosenek)",
+            "icon": "🎵",
+            "color": "#805ad5",
+            "auto_award_type": "PLAYLIST_CONTRIBUTOR",
+            "xp_reward": 75
+        },
+        {
+            "name": "Słuchacz",
+            "description": "Za słuchanie radia przez 60 minut",
+            "icon": "🎧",
+            "color": "#cd7f32",
+            "auto_award_type": "LISTENING_TIME",
+            "auto_award_config": '{"minutes": 60}',
+            "xp_reward": 25
+        },
+        {
+            "name": "Wierny Słuchacz",
+            "description": "Za słuchanie radia przez 600 minut",
+            "icon": "🎧",
+            "color": "#c0c0c0",
+            "auto_award_type": "LISTENING_TIME",
+            "auto_award_config": '{"minutes": 600}',
+            "xp_reward": 150
+        },
+        {
+            "name": "Mistrz Słuchania",
+            "description": "Za słuchanie radia przez 6000 minut",
+            "icon": "🎧",
+            "color": "#ffd700",
+            "auto_award_type": "LISTENING_TIME",
+            "auto_award_config": '{"minutes": 6000}',
+            "xp_reward": 500
+        },
+        {
+            "name": "Fan",
+            "description": "Za polubienie 1 utworu",
+            "icon": "👍",
+            "color": "#cd7f32",
+            "auto_award_type": "LIKES",
+            "auto_award_config": '{"count": 1}',
+            "xp_reward": 10
+        },
+        {
+            "name": "Super Fan",
+            "description": "Za polubienie 10 utworów",
+            "icon": "👍",
+            "color": "#c0c0c0",
+            "auto_award_type": "LIKES",
+            "auto_award_config": '{"count": 10}',
+            "xp_reward": 100
+        },
+        {
+            "name": "Mega Fan",
+            "description": "Za polubienie 100 utworów",
+            "icon": "👍",
+            "color": "#ffd700",
+            "auto_award_type": "LIKES",
+            "auto_award_config": '{"count": 100}',
+            "xp_reward": 500
+        },
+        {
+            "name": "Krytyk",
+            "description": "Za nie polubienie 1 utworu",
+            "icon": "👎",
+            "color": "#cd7f32",
+            "auto_award_type": "DISLIKES",
+            "auto_award_config": '{"count": 1}',
+            "xp_reward": 10
+        },
+        {
+            "name": "Surowość",
+            "description": "Za nie polubienie 10 utworów",
+            "icon": "👎",
+            "color": "#c0c0c0",
+            "auto_award_type": "DISLIKES",
+            "auto_award_config": '{"count": 10}',
+            "xp_reward": 100
+        },
+        {
+            "name": "Mistrz Krytyki",
+            "description": "Za nie polubienie 100 utworów",
+            "icon": "👎",
+            "color": "#ffd700",
+            "auto_award_type": "DISLIKES",
+            "auto_award_config": '{"count": 100}',
+            "xp_reward": 500
+        },
+        {
+            "name": "Słuchacz Audycji",
+            "description": "Za słuchanie radia podczas audycji",
+            "icon": "📻",
+            "color": "#e53e3e",
+            "auto_award_type": "SHOW_LISTENER",
+            "xp_reward": 75
+        },
+        {
+            "name": "Proponujący",
+            "description": "Za zgłoszenie 1 propozycji utworu",
+            "icon": "💡",
+            "color": "#cd7f32",
+            "auto_award_type": "SUGGESTIONS",
+            "auto_award_config": '{"count": 1}',
+            "xp_reward": 25
+        },
+        {
+            "name": "Aktywny Proponujący",
+            "description": "Za zgłoszenie 10 propozycji utworów",
+            "icon": "💡",
+            "color": "#c0c0c0",
+            "auto_award_type": "SUGGESTIONS",
+            "auto_award_config": '{"count": 10}',
+            "xp_reward": 200
+        },
+        {
+            "name": "Mistrz Propozycji",
+            "description": "Za zgłoszenie 100 propozycji utworów",
+            "icon": "💡",
+            "color": "#ffd700",
+            "auto_award_type": "SUGGESTIONS",
+            "auto_award_config": '{"count": 100}',
+            "xp_reward": 1000
+        },
+    ]
+    
+    for badge_data in default_badges:
+        result = await conn.execute(
+            text("SELECT id FROM badges WHERE name = :name"),
+            {"name": badge_data["name"]}
+        )
+        existing = result.scalar_one_or_none()
+        
+        if not existing:
+            await conn.execute(
+                text("""
+                    INSERT INTO badges (name, description, icon, color, auto_award_type, auto_award_config, xp_reward)
+                    VALUES (:name, :description, :icon, :color, :auto_award_type, :auto_award_config, :xp_reward)
+                """),
+                {
+                    "name": badge_data["name"],
+                    "description": badge_data["description"],
+                    "icon": badge_data["icon"],
+                    "color": badge_data["color"],
+                    "auto_award_type": badge_data["auto_award_type"],
+                    "auto_award_config": badge_data.get("auto_award_config"),
+                    "xp_reward": badge_data["xp_reward"]
+                }
+            )
+            logger.info(f"Created default badge: {badge_data['name']}")
 
 app = FastAPI(title="ONLY YES Radio API", lifespan=lifespan)
+
+# Usunięto exception handler - nie jest już potrzebny, endpoint /api/users/me/badges jest przed /api/users/{user_id}/badges
 
 # --- KONFIGURACJA SECURITY (KOLEJNOŚĆ JEST WAŻNA!) ---
 
@@ -455,19 +705,23 @@ async def radio_events(request: Request, db: AsyncSession = Depends(get_db)):
                     yield ": keepalive\n\n"
                     event_broadcaster.update_listener_activity(listener_id)
         finally:
-            if user:
-                result = await db.execute(
-                    select(models.ListeningSession).where(
-                        models.ListeningSession.user_id == user.id,
-                        models.ListeningSession.end_time.is_(None)
-                    ).order_by(desc(models.ListeningSession.start_time))
-                )
-                active_session = result.scalar_one_or_none()
-                if active_session:
-                    active_session.end_time = datetime.now(timezone.utc)
-                    await db.commit()
-            event_broadcaster.disconnect(queue)
-            event_broadcaster.unregister_listener(listener_id)
+            try:
+                if user:
+                    result = await db.execute(
+                        select(models.ListeningSession).where(
+                            models.ListeningSession.user_id == user.id,
+                            models.ListeningSession.end_time.is_(None)
+                        ).order_by(desc(models.ListeningSession.start_time))
+                    )
+                    active_session = result.scalar_one_or_none()
+                    if active_session:
+                        active_session.end_time = datetime.now(timezone.utc)
+                        await db.commit()
+            except Exception as e:
+                logger.error(f"Error closing listening session: {e}", exc_info=True)
+            finally:
+                event_broadcaster.disconnect(queue)
+                event_broadcaster.unregister_listener(listener_id)
     
     return StreamingResponse(
         event_generator(),
@@ -600,6 +854,12 @@ async def create_vote(vote: VoteRequest, request: Request, db: AsyncSession = De
     
     await db.commit()
     await db.refresh(user)
+    
+    if vote.vote_type == "LIKE":
+        await _check_and_award_badges_internal(user.id, "LIKES", db)
+    elif vote.vote_type == "DISLIKE":
+        await _check_and_award_badges_internal(user.id, "DISLIKES", db)
+    
     return {"status": "success", "vote_type": vote.vote_type, "xp_awarded": should_award_xp}
 
 @app.delete("/api/votes/{song_id}")
@@ -665,6 +925,9 @@ async def create_suggestion(suggestion: SuggestionCreateRequest, request: Reques
     db.add(new_suggestion)
     await db.commit()
     await db.refresh(new_suggestion)
+    
+    await _check_and_award_badges_internal(user.id, "SUGGESTIONS", db)
+    
     return {"status": "success", "id": new_suggestion.id}
 
 @app.get("/api/suggestions")
@@ -705,6 +968,9 @@ async def approve_suggestion(suggestion_id: int, request: Request, db: AsyncSess
     
     suggestion.status = "APPROVED"
     await db.commit()
+    
+    await _check_and_award_badges_internal(suggestion.user_id, "PLAYLIST_CONTRIBUTOR", db)
+    
     return {"status": "success"}
 
 @app.post("/api/suggestions/{suggestion_id}/reject")
@@ -1083,6 +1349,18 @@ async def get_user_stats_by_id(user_id: int, db: AsyncSession = Depends(get_db))
     xp = user.xp or 0
     rank_info = get_rank(xp)
     
+    featured_badge = None
+    if user.featured_badge_id:
+        badge = await db.get(models.Badge, user.featured_badge_id)
+        if badge:
+            featured_badge = {
+                "id": badge.id,
+                "name": badge.name,
+                "description": badge.description,
+                "icon": badge.icon,
+                "color": badge.color
+            }
+    
     return {
         "user_id": user.id,
         "username": user.username,
@@ -1092,7 +1370,8 @@ async def get_user_stats_by_id(user_id: int, db: AsyncSession = Depends(get_db))
         "votes_count": votes_count or 0,
         "reputation_score": user.reputation_score,
         "xp": xp,
-        "rank": rank_info
+        "rank": rank_info,
+        "featured_badge": featured_badge
     }
 
 # --- PLAYLISTS ---
@@ -1335,3 +1614,357 @@ async def get_full_radio_info(request: Request, db: AsyncSession = Depends(get_d
             }
         }
     }
+
+# --- BADGES ---
+
+async def check_and_award_badges(user_id: int, badge_type: str, db: AsyncSession = None):
+    """Sprawdza warunki i przyznaje odznaki automatycznie"""
+    from .database import AsyncSessionLocal
+    
+    if db is None:
+        async with AsyncSessionLocal() as session:
+            await _check_and_award_badges_internal(user_id, badge_type, session)
+    else:
+        await _check_and_award_badges_internal(user_id, badge_type, db)
+
+async def _check_and_award_badges_internal(user_id: int, badge_type: str, db: AsyncSession, context_data: dict = None):
+    """Wewnętrzna funkcja sprawdzająca warunki odznak"""
+    import json
+    
+    result = await db.execute(
+        select(models.Badge).where(models.Badge.auto_award_type == badge_type)
+    )
+    badges = result.scalars().all()
+    
+    user = await db.get(models.User, user_id)
+    if not user:
+        return
+    
+    for badge in badges:
+        existing = await db.scalar(
+            select(models.UserBadge).where(
+                models.UserBadge.user_id == user_id,
+                models.UserBadge.badge_id == badge.id
+            )
+        )
+        if existing:
+            continue
+        
+        should_award = False
+        config_data = {}
+        if badge.auto_award_config:
+            try:
+                config_data = json.loads(badge.auto_award_config)
+            except:
+                pass
+        
+        if badge_type == "NIGHT_SHIFT":
+            now = datetime.now(timezone.utc)
+            hour = now.hour
+            if hour >= 2 and hour < 5:
+                should_award = True
+        
+        elif badge_type == "PLAYLIST_GUARDIAN":
+            should_award = True
+        
+        elif badge_type == "PLAYLIST_CONTRIBUTOR":
+            suggestions_count = await db.scalar(
+                select(func.count(models.Suggestion.id)).where(
+                    models.Suggestion.user_id == user_id,
+                    models.Suggestion.status == "APPROVED"
+                )
+            )
+            if suggestions_count and suggestions_count >= 1:
+                should_award = True
+        
+        elif badge_type == "LISTENING_TIME":
+            required_minutes = config_data.get("minutes", 0)
+            total_minutes = await db.scalar(
+                select(func.sum(models.ListeningSession.duration_seconds / 60)).where(
+                    models.ListeningSession.user_id == user_id
+                )
+            )
+            if total_minutes and total_minutes >= required_minutes:
+                should_award = True
+        
+        elif badge_type == "LIKES":
+            required_count = config_data.get("count", 0)
+            likes_count = await db.scalar(
+                select(func.count(models.Vote.id)).where(
+                    models.Vote.user_id == user_id,
+                    models.Vote.vote_type == "LIKE"
+                )
+            )
+            if likes_count and likes_count >= required_count:
+                should_award = True
+        
+        elif badge_type == "DISLIKES":
+            required_count = config_data.get("count", 0)
+            dislikes_count = await db.scalar(
+                select(func.count(models.Vote.id)).where(
+                    models.Vote.user_id == user_id,
+                    models.Vote.vote_type == "DISLIKE"
+                )
+            )
+            if dislikes_count and dislikes_count >= required_count:
+                should_award = True
+        
+        elif badge_type == "SHOW_LISTENER":
+            should_award = context_data and context_data.get("is_show_time", False)
+        
+        elif badge_type == "SUGGESTIONS":
+            required_count = config_data.get("count", 0)
+            suggestions_count = await db.scalar(
+                select(func.count(models.Suggestion.id)).where(
+                    models.Suggestion.user_id == user_id
+                )
+            )
+            if suggestions_count and suggestions_count >= required_count:
+                should_award = True
+        
+        if should_award:
+            user_badge = models.UserBadge(
+                user_id=user_id,
+                badge_id=badge.id,
+                awarded_by=None
+            )
+            db.add(user_badge)
+            
+            if badge.xp_reward and badge.xp_reward > 0:
+                user.xp = (user.xp or 0) + badge.xp_reward
+                xp_award = models.XpAward(
+                    user_id=user_id,
+                    song_id=None,
+                    xp_amount=badge.xp_reward,
+                    award_type="BADGE"
+                )
+                db.add(xp_award)
+            
+            await db.commit()
+
+@app.get("/api/badges")
+async def get_all_badges(db: AsyncSession = Depends(get_db)):
+    try:
+        result = await db.execute(select(models.Badge).order_by(models.Badge.created_at))
+        badges = result.scalars().all()
+        
+        # Pobierz liczbę wszystkich użytkowników
+        total_users = await db.scalar(select(func.count(models.User.id)))
+        
+        badge_list = []
+        for b in badges:
+            # Policz ile użytkowników ma tę odznakę
+            users_with_badge = await db.scalar(
+                select(func.count(func.distinct(models.UserBadge.user_id)))
+                .where(models.UserBadge.badge_id == b.id)
+            )
+            
+            # Oblicz procent
+            percentage = 0.0
+            if total_users and total_users > 0:
+                percentage = round((users_with_badge / total_users) * 100, 1)
+            
+            badge_list.append({
+                "id": b.id,
+                "name": b.name,
+                "description": b.description,
+                "icon": b.icon,
+                "color": b.color,
+                "auto_award_type": b.auto_award_type,
+                "auto_award_config": b.auto_award_config,
+                "xp_reward": (b.xp_reward if b.xp_reward is not None else 0),
+                "created_at": b.created_at.isoformat() if b.created_at else None,
+                "users_count": users_with_badge or 0,
+                "total_users": total_users or 0,
+                "percentage": percentage
+            })
+        
+        return badge_list
+    except Exception as e:
+        logger.error(f"Error fetching badges: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Error fetching badges")
+
+# WAŻNE: Endpoint /api/users/me/badges musi być PRZED /api/users/{user_id}/badges
+# aby FastAPI nie próbował dopasować "me" jako user_id
+@app.get("/api/users/me/badges")
+async def get_my_badges(request: Request, db: AsyncSession = Depends(get_db)):
+    # Używamy tego samego wzorca co /api/users/me
+    user = await auth.get_current_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    try:
+        result = await db.execute(
+            select(models.UserBadge, models.Badge)
+            .join(models.Badge, models.UserBadge.badge_id == models.Badge.id)
+            .where(models.UserBadge.user_id == user.id)
+            .order_by(desc(models.UserBadge.awarded_at))
+        )
+        
+        # Grupujemy po badge_id i liczymy wystąpienia
+        badge_counts = {}
+        badge_data = {}
+        latest_awarded = {}
+        
+        for user_badge, badge in result.all():
+            badge_id = badge.id
+            if badge_id not in badge_counts:
+                badge_counts[badge_id] = 0
+                badge_data[badge_id] = {
+                    "id": badge.id,
+                    "name": badge.name,
+                    "description": badge.description,
+                    "icon": badge.icon,
+                    "color": badge.color,
+                    "auto_award_config": badge.auto_award_config,
+                    "is_featured": user.featured_badge_id == badge.id
+                }
+            badge_counts[badge_id] += 1
+            # Zapamiętujemy najnowszą datę przyznania
+            if badge_id not in latest_awarded or (user_badge.awarded_at and latest_awarded[badge_id] < user_badge.awarded_at):
+                latest_awarded[badge_id] = user_badge.awarded_at
+        
+        badges = []
+        for badge_id, data in badge_data.items():
+            data["count"] = badge_counts[badge_id]
+            data["awarded_at"] = latest_awarded[badge_id].isoformat() if latest_awarded[badge_id] else None
+            badges.append(data)
+        
+        return badges
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching user badges: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Error fetching badges")
+
+class FeatureBadgeRequest(BaseModel):
+    badge_id: Optional[int] = None
+
+@app.put("/api/users/me/badges/feature")
+async def feature_badge(request: Request, feature_req: FeatureBadgeRequest, db: AsyncSession = Depends(get_db)):
+    user = await auth.get_current_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if feature_req.badge_id is None:
+        user.featured_badge_id = None
+        await db.commit()
+        return {"status": "success", "featured_badge_id": None}
+    
+    badge = await db.get(models.Badge, feature_req.badge_id)
+    if not badge:
+        raise HTTPException(status_code=404, detail="Badge not found")
+    
+    user_badge = await db.scalar(
+        select(models.UserBadge).where(
+            models.UserBadge.user_id == user.id,
+            models.UserBadge.badge_id == feature_req.badge_id
+        )
+    )
+    if not user_badge:
+        raise HTTPException(status_code=403, detail="You don't have this badge")
+    
+    user.featured_badge_id = feature_req.badge_id
+    await db.commit()
+    return {"status": "success", "featured_badge_id": feature_req.badge_id}
+
+class CreateBadgeRequest(BaseModel):
+    name: str
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = None
+    auto_award_type: Optional[str] = None
+    auto_award_config: Optional[str] = None
+    xp_reward: Optional[int] = 0
+
+@app.post("/api/admin/badges")
+async def create_badge(create_req: CreateBadgeRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    current_user = await auth.get_current_user(request, db)
+    if not current_user or not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin only")
+    
+    badge = models.Badge(
+        name=create_req.name,
+        description=create_req.description,
+        icon=create_req.icon,
+        color=create_req.color,
+        auto_award_type=create_req.auto_award_type,
+        auto_award_config=create_req.auto_award_config,
+        xp_reward=create_req.xp_reward or 0
+    )
+    db.add(badge)
+    await db.commit()
+    await db.refresh(badge)
+    
+    return {
+        "id": badge.id,
+        "name": badge.name,
+        "description": badge.description,
+        "icon": badge.icon,
+        "color": badge.color,
+        "auto_award_type": badge.auto_award_type,
+        "created_at": badge.created_at.isoformat() if badge.created_at else None
+    }
+
+class AwardBadgeRequest(BaseModel):
+    user_id: int
+    badge_id: int
+
+@app.post("/api/admin/badges/award")
+async def award_badge(award_req: AwardBadgeRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    current_user = await auth.get_current_user(request, db)
+    if not current_user or not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin only")
+    
+    user = await db.get(models.User, award_req.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    badge = await db.get(models.Badge, award_req.badge_id)
+    if not badge:
+        raise HTTPException(status_code=404, detail="Badge not found")
+    
+    existing = await db.scalar(
+        select(models.UserBadge).where(
+            models.UserBadge.user_id == award_req.user_id,
+            models.UserBadge.badge_id == award_req.badge_id
+        )
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="User already has this badge")
+    
+    user_badge = models.UserBadge(
+        user_id=award_req.user_id,
+        badge_id=award_req.badge_id,
+        awarded_by=current_user.id
+    )
+    db.add(user_badge)
+    
+    if badge.xp_reward and badge.xp_reward > 0:
+        user.xp = (user.xp or 0) + badge.xp_reward
+        xp_award = models.XpAward(
+            user_id=award_req.user_id,
+            song_id=None,
+            xp_amount=badge.xp_reward,
+            award_type="BADGE"
+        )
+        db.add(xp_award)
+    
+    await db.commit()
+    
+    return {"status": "success", "user_id": award_req.user_id, "badge_id": award_req.badge_id}
+
+class ReportErrorRequest(BaseModel):
+    song_id: Optional[str] = None
+    error_type: str  # METADATA_ERROR, FILE_ERROR
+    description: Optional[str] = None
+
+@app.post("/api/report-error")
+async def report_error(report_req: ReportErrorRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    user = await auth.get_current_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    await _check_and_award_badges_internal(user.id, "PLAYLIST_GUARDIAN", db)
+    
+    return {"status": "success", "message": "Błąd zgłoszony"}

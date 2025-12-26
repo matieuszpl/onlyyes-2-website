@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
-const DEFAULT_ALBUM_ART = "https://azura.onlyyes.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
+const DEFAULT_ALBUM_ART =
+  "https://azura.onlyyes.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
 
 let defaultImageData = null;
 let defaultImageLoaded = false;
@@ -11,10 +12,10 @@ const loadDefaultImage = () => {
       resolve(defaultImageData);
       return;
     }
-    
+
     const img = new Image();
     img.crossOrigin = "anonymous";
-    
+
     img.onload = () => {
       try {
         const canvas = document.createElement("canvas");
@@ -31,36 +32,41 @@ const loadDefaultImage = () => {
         resolve(null);
       }
     };
-    
-    img.onerror = () => {
+
+    img.onerror = (e) => {
       defaultImageLoaded = true;
       resolve(null);
     };
-    
-    img.src = DEFAULT_ALBUM_ART;
+
+    try {
+      img.src = DEFAULT_ALBUM_ART;
+    } catch (e) {
+      defaultImageLoaded = true;
+      resolve(null);
+    }
   });
 };
 
-const compareImages = (imgData1, imgData2, threshold = 0.90) => {
+const compareImages = (imgData1, imgData2, threshold = 0.9) => {
   if (!imgData1 || !imgData2) return false;
   if (imgData1.data.length !== imgData2.data.length) return false;
-  
+
   let matches = 0;
   const total = imgData1.data.length / 4;
-  
+
   for (let i = 0; i < imgData1.data.length; i += 4) {
     const r1 = imgData1.data[i];
     const g1 = imgData1.data[i + 1];
     const b1 = imgData1.data[i + 2];
-    
+
     const r2 = imgData2.data[i];
     const g2 = imgData2.data[i + 1];
     const b2 = imgData2.data[i + 2];
-    
+
     const diff = Math.abs(r1 - r2) + Math.abs(g1 - g2) + Math.abs(b1 - b2);
     if (diff < 30) matches++;
   }
-  
+
   return matches / total >= threshold;
 };
 
@@ -79,11 +85,11 @@ const brightenColor = (r, g, b, factor = 1.6) => {
   const baseBrightness = (r + g + b) / 3;
   const targetBrightness = Math.min(255, baseBrightness * factor);
   const ratio = targetBrightness / (baseBrightness || 1);
-  
+
   return {
     r: Math.min(255, Math.round(r * ratio)),
     g: Math.min(255, Math.round(g * ratio)),
-    b: Math.min(255, Math.round(b * ratio))
+    b: Math.min(255, Math.round(b * ratio)),
   };
 };
 
@@ -99,10 +105,10 @@ const checkIfDefault = (imageUrl) => {
       resolve(false);
       return;
     }
-    
+
     const img = new Image();
     img.crossOrigin = "anonymous";
-    
+
     img.onload = () => {
       try {
         const canvas = document.createElement("canvas");
@@ -110,47 +116,50 @@ const checkIfDefault = (imageUrl) => {
         const size = 100;
         canvas.width = size;
         canvas.height = size;
-        
+
         ctx.drawImage(img, 0, 0, size, size);
-        
+
         const imageData = ctx.getImageData(0, 0, size, size);
-        
+
         const defaultCanvas = document.createElement("canvas");
         const defaultCtx = defaultCanvas.getContext("2d");
         defaultCanvas.width = size;
         defaultCanvas.height = size;
         defaultCtx.putImageData(defaultImgData, 0, 0);
         const scaledDefault = defaultCtx.getImageData(0, 0, size, size);
-        
+
         const isDefault = compareImages(imageData, scaledDefault);
         resolve(isDefault);
       } catch (e) {
         resolve(false);
       }
     };
-    
+
     img.onerror = () => {
       resolve(true);
     };
-    
-    img.src = imageUrl;
+
+    try {
+      img.src = imageUrl;
+    } catch (e) {
+      resolve(true);
+    }
   });
 };
 
 export const useAlbumColors = (thumbnail) => {
   const [isDefault, setIsDefault] = useState(false);
-  
+
   useEffect(() => {
     if (!thumbnail) {
       setIsDefault(true);
       return;
     }
-    
+
     checkIfDefault(thumbnail).then((defaultImg) => {
       setIsDefault(defaultImg);
     });
   }, [thumbnail]);
-  
+
   return { isDefault, thumbnail };
 };
-

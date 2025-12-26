@@ -11,9 +11,11 @@ import {
   BarChart3,
   Shield,
   Music,
+  Award,
 } from "lucide-react";
 import PageHeader from "../components/layout/PageHeader";
 import UserTooltip from "../components/UserTooltip";
+import { getIconComponent } from "../utils/badgeIcons";
 
 export default function AdminPanel() {
   const { user } = useUser();
@@ -23,7 +25,19 @@ export default function AdminPanel() {
   const [votes, setVotes] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [radioInfo, setRadioInfo] = useState(null);
+  const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showCreateBadge, setShowCreateBadge] = useState(false);
+  const [showAwardModal, setShowAwardModal] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [newBadge, setNewBadge] = useState({
+    name: "",
+    description: "",
+    icon: "",
+    color: "#ffffff",
+    xp_reward: 0,
+  });
 
   useEffect(() => {
     if (!user || !user.is_admin) {
@@ -48,6 +62,14 @@ export default function AdminPanel() {
       } else if (activeTab === "radio") {
         const res = await api.get("/admin/radio-info");
         setRadioInfo(res.data);
+      } else if (activeTab === "badges") {
+        try {
+          const res = await api.get("/badges");
+          setBadges(res.data || []);
+        } catch (error) {
+          console.error("Error loading badges:", error);
+          setBadges([]);
+        }
       }
     } catch (error) {
       console.error("Error loading admin data:", error);
@@ -78,10 +100,55 @@ export default function AdminPanel() {
     }
   };
 
+  const handleCreateBadge = async () => {
+    try {
+      await api.post("/admin/badges", newBadge);
+      setShowCreateBadge(false);
+      setNewBadge({
+        name: "",
+        description: "",
+        icon: "",
+        color: "#ffffff",
+        xp_reward: 0,
+      });
+      loadData();
+    } catch (error) {
+      console.error("Create badge error:", error);
+    }
+  };
+
+  const handleAwardBadge = async () => {
+    if (!selectedBadge || !selectedUser) return;
+    try {
+      await api.post("/admin/badges/award", {
+        badge_id: selectedBadge.id,
+        user_id: selectedUser.id,
+      });
+      setShowAwardModal(false);
+      setSelectedBadge(null);
+      setSelectedUser(null);
+      loadData();
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Błąd podczas nadawania osiągnięcia";
+      console.error("Award badge error:", errorMessage, error);
+      alert(errorMessage);
+    }
+  };
+
+  const openAwardModal = (badge) => {
+    setSelectedBadge(badge);
+    setSelectedUser(null);
+    setShowAwardModal(true);
+  };
+
   const tabs = [
     { id: "users", label: "UŻYTKOWNICY", icon: Users },
     { id: "votes", label: "GŁOSY", icon: ThumbsUp },
     { id: "suggestions", label: "PROPOZYCJE", icon: Music },
+    { id: "badges", label: "OSIĄGNIĘCIA", icon: Award },
     { id: "radio", label: "RADIO", icon: Radio },
   ];
 
@@ -324,6 +391,231 @@ export default function AdminPanel() {
                     </div>
                   ))}
                 </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === "badges" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-4"
+            >
+              <div className="flex justify-between items-center">
+                <div className="font-mono text-xs text-text-secondary">
+                  ŁĄCZNIE: {badges.length} osiągnięć
+                </div>
+                <button
+                  onClick={() => setShowCreateBadge(!showCreateBadge)}
+                  className="btn-cut bg-primary text-black px-4 py-2 font-mono text-xs font-bold"
+                >
+                  {showCreateBadge ? "ANULUJ" : "NOWE OSIĄGNIĘCIE"}
+                </button>
+              </div>
+
+              {showCreateBadge && (
+                <div className="glass-panel p-4 space-y-3">
+                  <h3 className="font-header text-sm text-primary uppercase tracking-wider">
+                    NOWE OSIĄGNIĘCIE
+                  </h3>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Nazwa"
+                      value={newBadge.name}
+                      onChange={(e) =>
+                        setNewBadge({ ...newBadge, name: e.target.value })
+                      }
+                      className="w-full bg-white/5 border border-white/10 px-3 py-2 font-mono text-xs text-text-primary focus:border-primary focus:outline-none"
+                    />
+                    <textarea
+                      placeholder="Opis"
+                      value={newBadge.description}
+                      onChange={(e) =>
+                        setNewBadge({
+                          ...newBadge,
+                          description: e.target.value,
+                        })
+                      }
+                      className="w-full bg-white/5 border border-white/10 px-3 py-2 font-mono text-xs text-text-primary focus:border-primary focus:outline-none"
+                      rows={3}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Ikona (emoji lub nazwa)"
+                      value={newBadge.icon}
+                      onChange={(e) =>
+                        setNewBadge({ ...newBadge, icon: e.target.value })
+                      }
+                      className="w-full bg-white/5 border border-white/10 px-3 py-2 font-mono text-xs text-text-primary focus:border-primary focus:outline-none"
+                    />
+                    <input
+                      type="color"
+                      value={newBadge.color}
+                      onChange={(e) =>
+                        setNewBadge({ ...newBadge, color: e.target.value })
+                      }
+                      className="w-full h-10 bg-white/5 border border-white/10"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Nagroda XP"
+                      value={newBadge.xp_reward}
+                      onChange={(e) =>
+                        setNewBadge({
+                          ...newBadge,
+                          xp_reward: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full bg-white/5 border border-white/10 px-3 py-2 font-mono text-xs text-text-primary focus:border-primary focus:outline-none"
+                      min="0"
+                    />
+                  </div>
+                  <button
+                    onClick={handleCreateBadge}
+                    className="btn-cut bg-primary text-black px-4 py-2 font-mono text-xs font-bold"
+                  >
+                    UTWÓRZ
+                  </button>
+                </div>
+              )}
+
+              <div className="glass-panel p-4">
+                <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                  {!badges || badges.length === 0 ? (
+                    <div className="font-mono text-sm text-text-secondary text-center py-4">
+                      BRAK OSIĄGNIĘĆ
+                    </div>
+                  ) : (
+                    badges.map((badge) => (
+                      <div
+                        key={badge.id}
+                        className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-sm hover:border-primary/50 transition-all"
+                      >
+                        <div
+                          className="flex items-center justify-center"
+                          style={{ color: badge.color || "#ffffff" }}
+                        >
+                          {(() => {
+                            const IconComponent = getIconComponent(badge.icon);
+                            return <IconComponent size={32} />;
+                          })()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-mono text-sm text-text-primary mb-1">
+                            {badge.name}
+                          </div>
+                          {badge.description && (
+                            <div className="font-mono text-[10px] text-text-secondary mb-1">
+                              {badge.description}
+                            </div>
+                          )}
+                          {badge.auto_award_type && (
+                            <div className="font-mono text-[9px] text-primary">
+                              AUTO: {badge.auto_award_type}
+                            </div>
+                          )}
+                          {badge.xp_reward > 0 && (
+                            <div className="font-mono text-[9px] text-accent-cyan">
+                              +{badge.xp_reward} XP
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => openAwardModal(badge)}
+                          className="btn-cut bg-primary text-black px-4 py-2 font-mono text-xs font-bold whitespace-nowrap"
+                        >
+                          NADAJ
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {showAwardModal && selectedBadge && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                  onClick={() => setShowAwardModal(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.9 }}
+                    animate={{ scale: 1 }}
+                    className="glass-panel p-6 max-w-md w-full mx-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <h3 className="font-header text-sm text-primary uppercase tracking-wider mb-4">
+                      NADAJ OSIĄGNIĘCIE
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="font-mono text-xs text-text-secondary mb-2">
+                          OSIĄGNIĘCIE:
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-sm">
+                          <div
+                            className="text-2xl"
+                            style={{ color: selectedBadge.color || "#ffffff" }}
+                          >
+                            {selectedBadge.icon || "🏆"}
+                          </div>
+                          <div>
+                            <div className="font-mono text-sm text-text-primary">
+                              {selectedBadge.name}
+                            </div>
+                            {selectedBadge.description && (
+                              <div className="font-mono text-[10px] text-text-secondary">
+                                {selectedBadge.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-mono text-xs text-text-secondary mb-2">
+                          UŻYTKOWNIK:
+                        </div>
+                        <select
+                          value={selectedUser?.id || ""}
+                          onChange={(e) => {
+                            const userId = parseInt(e.target.value);
+                            const user = users.find((u) => u.id === userId);
+                            setSelectedUser(user || null);
+                          }}
+                          className="w-full bg-white/5 border border-white/10 px-3 py-2 font-mono text-xs text-text-primary focus:border-primary focus:outline-none"
+                        >
+                          <option value="">Wybierz użytkownika...</option>
+                          {users.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.username} (ID: {u.id})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleAwardBadge}
+                          disabled={!selectedUser}
+                          className="btn-cut bg-primary text-black px-4 py-2 font-mono text-xs font-bold flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          POTWIERDŹ
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowAwardModal(false);
+                            setSelectedBadge(null);
+                            setSelectedUser(null);
+                          }}
+                          className="btn-cut bg-white/10 text-text-primary px-4 py-2 font-mono text-xs font-bold"
+                        >
+                          ANULUJ
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
               )}
             </motion.div>
           )}

@@ -19,9 +19,14 @@ oauth.register(
 )
 
 async def get_current_user(request: Request, db: AsyncSession):
-    user_info = request.session.get('user')
-    if not user_info:
+    try:
+        if not hasattr(request, 'session') or not request.session:
+            return None
+        user_info = request.session.get('user')
+        if not user_info or not isinstance(user_info, dict) or 'id' not in user_info:
+            return None
+        
+        result = await db.execute(select(models.User).where(models.User.discord_id == user_info['id']))
+        return result.scalar_one_or_none()
+    except (AttributeError, KeyError, TypeError, Exception):
         return None
-    
-    result = await db.execute(select(models.User).where(models.User.discord_id == user_info['id']))
-    return result.scalar_one_or_none()

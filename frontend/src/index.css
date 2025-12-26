@@ -2,6 +2,18 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
+@theme {
+  --color-primary: rgb(var(--primary-rgb) / <alpha-value>);
+  --color-accent-magenta: rgb(var(--accent-magenta-rgb) / <alpha-value>);
+  --color-accent-cyan: rgb(var(--accent-cyan-rgb) / <alpha-value>);
+
+  /* Czcionki */
+  --font-family-header: "Rajdhani", "Exo 2", sans-serif;
+  --font-family-brand: "Rajdhani", "Exo 2", sans-serif;
+  --font-family-mono: "JetBrains Mono", monospace;
+  --font-family-sans: "Rajdhani", "Exo 2", system-ui, -apple-system, sans-serif;
+}
+
 * {
   box-sizing: border-box;
 }

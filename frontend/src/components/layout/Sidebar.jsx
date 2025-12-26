@@ -14,12 +14,17 @@ import {
   X,
   Trophy,
   GitBranch,
+  Award,
+  UserPlus,
+  TrendingUp as TrendingUpIcon,
+  Star,
 } from "lucide-react";
 import { useUser } from "../../contexts/UserContext";
 import { cn } from "../../utils/cn";
 import ThemeDropdown from "../ThemeDropdown";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
+import { getIconComponent } from "../../utils/badgeIcons";
 
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
@@ -35,6 +40,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { path: "/requests", icon: Music, label: "PROPOZYCJE" },
     { path: "/schedule", icon: Calendar, label: "KALENDARZ" },
     { path: "/leaderboard", icon: Trophy, label: "RANKING" },
+    { path: "/badges", icon: Award, label: "OSIĄGNIĘCIA" },
     { path: "/changelog", icon: GitBranch, label: "CHANGELOG" },
   ];
 
@@ -109,81 +115,176 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
         )}
         {user ? (
-          <div className="space-y-2 pt-1">
-            <div className="flex items-center gap-2.5">
-              {user.avatar && (
-                <img
-                  src={user.avatar}
-                  alt={user.username}
-                  className="w-8 h-8 border border-primary/50 rounded"
-                />
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="font-mono text-xs text-text-primary truncate">
-                  {user.username}
+          <div className="relative overflow-hidden -mx-3 -my-3">
+            {/* Gradient background */}
+            <div
+              className="absolute inset-0 opacity-50"
+              style={{
+                background: user.featured_badge?.color
+                  ? `linear-gradient(135deg, ${user.featured_badge.color}15 0%, transparent 100%)`
+                  : "linear-gradient(135deg, rgba(0, 243, 255, 0.1) 0%, transparent 100%)",
+              }}
+            />
+
+            <div className="relative p-3 space-y-3">
+              {/* User header */}
+              <div className="flex items-start gap-3">
+                {/* Avatar */}
+                <div className="relative shrink-0">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.username}
+                      className="w-12 h-12 border-2 rounded-full object-cover shadow-lg"
+                      style={{
+                        borderColor:
+                          user.featured_badge?.color || "var(--primary)",
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="w-12 h-12 border-2 rounded-full bg-white/5 flex items-center justify-center shadow-lg"
+                      style={{
+                        borderColor:
+                          user.featured_badge?.color || "var(--primary)",
+                      }}
+                    >
+                      <UserPlus size={20} className="text-text-secondary" />
+                    </div>
+                  )}
+                  {/* Featured badge indicator */}
+                  {user.featured_badge && (
+                    <div
+                      className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white/20 flex items-center justify-center shadow-lg"
+                      style={{
+                        backgroundColor:
+                          user.featured_badge.color || "var(--primary)",
+                      }}
+                    >
+                      {(() => {
+                        const IconComponent = getIconComponent(
+                          user.featured_badge.icon
+                        );
+                        return (
+                          <IconComponent
+                            size={10}
+                            className="text-black"
+                            strokeWidth={2.5}
+                          />
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
-                <div className="font-mono text-[10px] text-text-secondary">
-                  {user.is_admin ? "ADMIN" : user.rank?.name || "USER"}
-                </div>
-              </div>
-            </div>
-            {user.rank && (
-              <div className="space-y-2">
-                <div
-                  className="w-full rounded-full h-1 overflow-hidden relative"
-                  style={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
-                >
-                  <motion.div
-                    className="h-2 rounded-full"
-                    style={{
-                      backgroundColor: "var(--accent-magenta)",
-                      minWidth: user.rank.progress > 0 ? "2px" : "0",
-                    }}
-                    initial={{ width: `${user.rank.progress || 0}%` }}
-                    animate={{ width: `${user.rank.progress || 0}%` }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                  />
-                </div>
-                <div className="flex justify-between items-center text-[10px] font-mono">
-                  <AnimatePresence mode="wait">
-                    {xpNotification ? (
-                      <motion.span
-                        key="notification"
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        className="text-accent font-bold"
+
+                {/* User info */}
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <div className="font-header text-sm text-primary font-bold truncate mb-1">
+                    {user.username}
+                  </div>
+                  {user.rank && (
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <div className="font-mono text-[10px] text-primary bg-primary/20 px-1.5 py-0.5 rounded border border-primary/30">
+                        {user.rank.name}
+                      </div>
+                    </div>
+                  )}
+                  {user.featured_badge && (
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className="p-0.5 rounded border"
+                        style={{
+                          backgroundColor: `${user.featured_badge.color}20`,
+                          borderColor: `${user.featured_badge.color}50`,
+                        }}
                       >
-                        +{xpNotification.xp} XP
-                        {xpNotification.message && (
-                          <span className="text-primary/80 ml-1">
-                            - {xpNotification.message}
-                          </span>
-                        )}
-                      </motion.span>
-                    ) : (
-                      <motion.span
-                        key="xp-display"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-accent font-semibold"
-                      >
-                        {user.xp || 0} /{" "}
-                        {user.rank.next_rank_xp || user.xp || 0} XP
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                  {user.rank.next_rank && !xpNotification && (
-                    <span className="text-text-secondary/70 text-[9px]">
-                      {user.rank.next_rank_xp - (user.xp || 0)} do{" "}
-                      <span className="text-primary">
-                        {user.rank.next_rank}
+                        {(() => {
+                          const IconComponent = getIconComponent(
+                            user.featured_badge.icon
+                          );
+                          return (
+                            <IconComponent
+                              size={10}
+                              style={{
+                                color: user.featured_badge.color || "#ffffff",
+                              }}
+                            />
+                          );
+                        })()}
+                      </div>
+                      <span className="font-mono text-[9px] text-text-secondary truncate">
+                        {user.featured_badge.name}
                       </span>
-                    </span>
+                    </div>
                   )}
                 </div>
               </div>
-            )}
+
+              {/* XP Progress */}
+              {user.rank && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <TrendingUpIcon size={10} className="text-accent-cyan" />
+                      <span className="font-mono text-[10px] text-accent-cyan font-bold">
+                        {user.xp || 0} XP
+                      </span>
+                    </div>
+                    {user.rank.next_rank && !xpNotification && (
+                      <span className="font-mono text-[9px] text-text-secondary">
+                        {user.rank.next_rank_xp - (user.xp || 0)} do{" "}
+                        {user.rank.next_rank}
+                      </span>
+                    )}
+                  </div>
+                  <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                    <AnimatePresence mode="wait">
+                      {xpNotification ? (
+                        <motion.div
+                          key="notification"
+                          initial={{ opacity: 0, scaleX: 0 }}
+                          animate={{ opacity: 1, scaleX: 1 }}
+                          exit={{ opacity: 0, scaleX: 0 }}
+                          className="h-full rounded-full"
+                          style={{
+                            background:
+                              "linear-gradient(to right, var(--accent-magenta), var(--primary))",
+                            width: "100%",
+                          }}
+                        />
+                      ) : (
+                        <motion.div
+                          key="progress"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${user.rank.progress || 0}%` }}
+                          transition={{ duration: 0.8, delay: 0.1 }}
+                          className="h-full rounded-full"
+                          style={{
+                            background:
+                              "linear-gradient(to right, var(--primary), var(--accent-cyan))",
+                          }}
+                        />
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  {xpNotification && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="font-mono text-[9px] text-accent font-bold"
+                    >
+                      +{xpNotification.xp} XP
+                      {xpNotification.message && (
+                        <span className="text-primary/80 ml-1">
+                          - {xpNotification.message}
+                        </span>
+                      )}
+                    </motion.div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <button

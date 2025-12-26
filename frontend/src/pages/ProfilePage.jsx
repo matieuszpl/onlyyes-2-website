@@ -3,6 +3,7 @@ import { useUser } from "../contexts/UserContext";
 import PageHeader from "../components/layout/PageHeader";
 import ProfileHeader from "../components/profile/ProfileHeader";
 import ProfileOverview from "../components/profile/ProfileOverview";
+import ProfileBadges from "../components/profile/ProfileBadges";
 import XpHistory from "../components/profile/XpHistory";
 import ActivityHistory from "../components/profile/ActivityHistory";
 
@@ -28,6 +29,7 @@ export default function ProfilePage() {
       <ProfileHeader activeTab={activeTab} onTabChange={setActiveTab} />
       
       {activeTab === "overview" && <ProfileOverview />}
+      {activeTab === "badges" && <ProfileBadges />}
       {activeTab === "xp-history" && <XpHistory />}
       {activeTab === "activity" && <ActivityHistory />}
     </div>
