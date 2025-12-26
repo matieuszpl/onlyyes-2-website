@@ -13,6 +13,7 @@ import {
   Shield,
   X,
   Trophy,
+  GitBranch,
 } from "lucide-react";
 import { useUser } from "../../contexts/UserContext";
 import { cn } from "../../utils/cn";
@@ -34,6 +35,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { path: "/requests", icon: Music, label: "PROPOZYCJE" },
     { path: "/schedule", icon: Calendar, label: "KALENDARZ" },
     { path: "/leaderboard", icon: Trophy, label: "RANKING" },
+    { path: "/changelog", icon: GitBranch, label: "CHANGELOG" },
   ];
 
   if (user) {

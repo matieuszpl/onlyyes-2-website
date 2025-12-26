@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Music, Heart, UserPlus, Radio, X, Activity } from "lucide-react";
+import { motion } from "framer-motion";
+import { Music, Heart, UserPlus, Radio, Activity } from "lucide-react";
 import api from "../api";
 import UserTooltip from "./UserTooltip";
 
@@ -52,9 +52,6 @@ const formatTimeAgo = (minutesAgo) => {
 export default function ActivityFeed() {
   const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [userStats, setUserStats] = useState(null);
-  const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
     const loadActivity = async () => {
@@ -96,24 +93,6 @@ export default function ActivityFeed() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleUserClick = async (userId) => {
-    if (selectedUser === userId) {
-      setSelectedUser(null);
-      setUserStats(null);
-      return;
-    }
-    setSelectedUser(userId);
-    setLoadingStats(true);
-    try {
-      const res = await api.get(`/users/${userId}/stats`);
-      setUserStats(res.data);
-    } catch (error) {
-      console.error("Load user stats error:", error);
-    } finally {
-      setLoadingStats(false);
-    }
-  };
-
   const renderActivityText = (item) => {
     if (!item.username || !item.user_id) return item.text;
     const parts = item.text.split(item.username);
@@ -122,10 +101,7 @@ export default function ActivityFeed() {
       <>
         {parts[0]}
         <UserTooltip userId={item.user_id} username={item.username}>
-          <span
-            onClick={() => handleUserClick(item.user_id)}
-            className="text-primary hover:text-accent-cyan cursor-pointer font-bold transition-colors"
-          >
+          <span className="text-primary hover:text-accent-cyan cursor-pointer font-bold transition-colors">
             {item.username}
           </span>
         </UserTooltip>
@@ -190,7 +166,7 @@ export default function ActivityFeed() {
           BRAK AKTYWNOŚCI
         </div>
       ) : (
-        <div className="space-y-1.5 max-h-48 overflow-y-auto">
+        <div className="space-y-1.5">
           {feed.map((item, idx) => {
             const Icon = item.icon;
             return (
@@ -226,61 +202,6 @@ export default function ActivityFeed() {
           })}
         </div>
       )}
-
-      <AnimatePresence>
-        {selectedUser && userStats && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute top-full left-0 right-0 mt-2 glass-panel p-4 border border-primary/50 z-50"
-          >
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <div className="font-header text-sm text-primary uppercase">
-                  {userStats.username}
-                </div>
-                {userStats.avatar_url && (
-                  <img
-                    src={userStats.avatar_url}
-                    alt={userStats.username}
-                    className="w-12 h-12 rounded-full mt-2"
-                  />
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  setSelectedUser(null);
-                  setUserStats(null);
-                }}
-                className="text-text-secondary hover:text-primary"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="space-y-2 font-mono text-xs">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">PROPOZYCJE:</span>
-                <span className="text-text-primary">
-                  {userStats.suggestions_count}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">GŁOSY:</span>
-                <span className="text-text-primary">
-                  {userStats.votes_count}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">REPUTACJA:</span>
-                <span className="text-primary">
-                  {userStats.reputation_score}
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

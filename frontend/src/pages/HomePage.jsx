@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import HeroPlayer from "../components/player/HeroPlayer";
 import SongHistory from "../components/SongHistory";
 import ScheduledShows from "../components/ScheduledShows";
-import LiveStats from "../components/LiveStats";
 import ActivityFeed from "../components/ActivityFeed";
 import TimeDisplay from "../components/TimeDisplay";
 import TextGlitch from "../components/TextGlitch";
@@ -127,16 +126,6 @@ export default function HomePage() {
           >
             <ActivityFeed />
           </motion.div>
-          {user?.is_admin && (
-            <motion.div
-              key={`stats-${animKey}`}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <LiveStats />
-            </motion.div>
-          )}
         </div>
       </div>
     </div>

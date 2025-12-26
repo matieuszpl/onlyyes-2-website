@@ -24,6 +24,7 @@ import SettingsPage from "./pages/SettingsPage";
 import SchedulePage from "./pages/SchedulePage";
 import AdminPanel from "./pages/AdminPanel";
 import LeaderboardPage from "./pages/LeaderboardPage";
+import ChangelogPage from "./pages/ChangelogPage";
 
 function AppContent() {
   const [searchParams] = useSearchParams();
@@ -45,6 +46,7 @@ function AppContent() {
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/changelog" element={<ChangelogPage />} />
       </Routes>
     </LayoutManager>
   );

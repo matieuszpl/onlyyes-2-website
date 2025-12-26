@@ -9,6 +9,7 @@ import {
   Calendar,
   Shield,
   Trophy,
+  GitBranch,
 } from "lucide-react";
 import TextGlitch from "../TextGlitch";
 
@@ -22,6 +23,7 @@ const routeIcons = {
   "/admin": Shield,
   "/settings": Settings,
   "/leaderboard": Trophy,
+  "/changelog": GitBranch,
 };
 
 const routeTitles = {
@@ -34,6 +36,7 @@ const routeTitles = {
   "/admin": "ADMIN",
   "/settings": "USTAWIENIA",
   "/leaderboard": "RANKING",
+  "/changelog": "CHANGELOG",
 };
 
 export default function PageHeader({ title, icon, subtitle }) {
