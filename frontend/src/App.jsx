@@ -27,6 +27,7 @@ import AdminPanel from "./pages/AdminPanel";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import ChangelogPage from "./pages/ChangelogPage";
 import BadgesPage from "./pages/BadgesPage";
+import ErrorPage from "./pages/ErrorPage";
 
 function AppContent() {
   const [searchParams] = useSearchParams();
@@ -50,6 +51,7 @@ function AppContent() {
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/changelog" element={<ChangelogPage />} />
         <Route path="/badges" element={<BadgesPage />} />
+        <Route path="*" element={<ErrorPage />} />
       </Routes>
     </LayoutManager>
   );
