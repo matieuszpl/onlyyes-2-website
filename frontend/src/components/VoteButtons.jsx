@@ -5,12 +5,13 @@ import { useToast } from "./ToastContainer";
 import api from "../api";
 
 export default function VoteButtons({ songId, size = "normal" }) {
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
   const { nowPlaying } = useGlobalAudio();
   const { showToast } = useToast();
   const [vote, setVote] = useState(null);
   const [loading, setLoading] = useState(false);
   const prevNowPlayingSongIdRef = useRef(nowPlaying.songId);
+  const hasVotedBeforeRef = useRef(false);
 
   const isCurrentSong = nowPlaying.songId === songId;
   const hasVoted = vote !== null && isCurrentSong;
@@ -34,6 +35,7 @@ export default function VoteButtons({ songId, size = "normal" }) {
     const prevSongId = prevNowPlayingSongIdRef.current;
     if (prevSongId && prevSongId === songId && nowPlaying.songId !== songId) {
       setVote(null);
+      hasVotedBeforeRef.current = false;
     }
     prevNowPlayingSongIdRef.current = nowPlaying.songId;
   }, [nowPlaying.songId, songId]);
@@ -50,9 +52,18 @@ export default function VoteButtons({ songId, size = "normal" }) {
     if (loading || hasVoted) return;
 
     setLoading(true);
+    const wasNewVote = !hasVotedBeforeRef.current;
     try {
       await api.post("/votes", { song_id: songId, vote_type: voteType });
       setVote(voteType);
+      hasVotedBeforeRef.current = true;
+
+      if (wasNewVote) {
+        setTimeout(() => {
+          refreshUser();
+        }, 500);
+      }
+
       if (voteType === "LIKE") {
         showToast("LUBISZ TĄ PIOSENKĘ", "success", 4000);
       } else {

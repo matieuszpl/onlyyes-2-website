@@ -36,15 +36,64 @@ export default function LiveStats() {
 
   if (loading) {
     return (
-      <div className="glass-panel p-4 border-red-400/20">
-        <h3 className="font-header text-sm text-red-400 uppercase tracking-wider mb-3">
-          PANEL ADMINISTRATORA
-        </h3>
+      <div className="glass-panel p-4 space-y-3 border-red-400/20">
+        <div className="flex items-center gap-2">
+          <motion.div
+            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+            }}
+            className="w-4 h-4 bg-red-400/20 rounded"
+          />
+          <motion.div
+            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+            }}
+            className="h-4 bg-red-400/20 rounded w-40"
+          />
+        </div>
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="font-mono text-xs text-text-secondary">
-              ŁADOWANIE...
-            </div>
+            <motion.div
+              key={i}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: i * 0.1 }}
+              className="p-3 bg-white/5 border border-white/10 rounded-sm"
+            >
+              <div className="flex items-center gap-3">
+                <motion.div
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: i * 0.1,
+                  }}
+                  className="w-4 h-4 bg-white/20 rounded"
+                />
+                <motion.div
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: i * 0.1,
+                  }}
+                  className="h-4 bg-white/20 rounded w-24"
+                />
+                <motion.div
+                  animate={{ opacity: [0.2, 0.4, 0.2] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: i * 0.15,
+                  }}
+                  className="h-4 bg-white/10 rounded w-12 ml-auto"
+                />
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>

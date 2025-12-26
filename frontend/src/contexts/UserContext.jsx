@@ -30,8 +30,22 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    if (!user) return;
+    try {
+      const res = await api.get("/users/me");
+      if (res.data.is_logged_in) {
+        setUser(res.data);
+      }
+    } catch (error) {
+      console.error("Refresh user error:", error);
+    }
+  };
+
   useEffect(() => {
     checkUser();
+    const interval = setInterval(checkUser, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const login = () => {
@@ -49,7 +63,9 @@ export const UserProvider = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, loading, login, logout, checkUser }}>
+    <UserContext.Provider
+      value={{ user, loading, login, logout, checkUser, refreshUser }}
+    >
       {children}
     </UserContext.Provider>
   );

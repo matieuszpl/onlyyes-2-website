@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import TextGlitch from "./TextGlitch";
 import ImageGlitch from "./ImageGlitch";
 import { useRadioEvents } from "../contexts/RadioEventsContext";
@@ -38,12 +39,44 @@ export default function NextSong() {
 
   if (loading) {
     return (
-      <div className="glass-panel p-4">
-        <h3 className="font-header text-sm text-primary uppercase tracking-wider mb-2">
+      <div className="glass-panel p-4 space-y-2">
+        <h3 className="font-header text-sm text-primary uppercase tracking-wider">
           NASTĘPNY UTWÓR
         </h3>
-        <div className="font-mono text-[10px] text-text-secondary">
-          ŁADOWANIE...
+        <div className="flex items-center gap-2 p-2 bg-white/5 border border-white/10 rounded-sm">
+          <motion.div
+            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+            }}
+            className="w-10 h-10 bg-white/10 rounded shrink-0"
+          />
+          <div className="flex-1 space-y-2">
+            <motion.div
+              animate={{ opacity: [0.3, 0.6, 0.3] }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+              }}
+              className="h-3 bg-white/20 rounded w-3/4"
+            />
+            <motion.div
+              animate={{ opacity: [0.2, 0.4, 0.2] }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                delay: 0.1,
+              }}
+              className="h-2 bg-white/10 rounded w-1/2"
+            />
+          </div>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          >
+            <Loader2 size={14} className="text-primary/50" />
+          </motion.div>
         </div>
       </div>
     );

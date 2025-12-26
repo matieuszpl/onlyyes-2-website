@@ -11,6 +11,7 @@ class User(Base):
     avatar_url = Column(String, nullable=True)
     is_admin = Column(Boolean, default=False)
     reputation_score = Column(Integer, default=0) # Punkty za dobry gust
+    xp = Column(Integer, default=0) # Punkty doświadczenia
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Suggestion(Base):
@@ -40,4 +41,25 @@ class Vote(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     song_id = Column(String)
     vote_type = Column(String)  # LIKE, DISLIKE
+    xp_awarded = Column(Boolean, default=False)  # Czy XP zostało już przyznane za ten głos
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class ListeningSession(Base):
+    __tablename__ = "listening_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    start_time = Column(DateTime(timezone=True), server_default=func.now())
+    end_time = Column(DateTime(timezone=True), nullable=True)
+    duration_seconds = Column(Integer, default=0)
+    xp_awarded = Column(Integer, default=0)
+
+class XpAward(Base):
+    __tablename__ = "xp_awards"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    song_id = Column(String, nullable=True)  # NULL dla sesji słuchania
+    xp_amount = Column(Integer, nullable=False)
+    award_type = Column(String)  # VOTE, LISTENING
     created_at = Column(DateTime(timezone=True), server_default=func.now())

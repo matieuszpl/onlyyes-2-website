@@ -12,16 +12,20 @@ import {
   LogIn,
   Shield,
   X,
+  Trophy,
 } from "lucide-react";
 import { useUser } from "../../contexts/UserContext";
 import { cn } from "../../utils/cn";
 import ThemeDropdown from "../ThemeDropdown";
 import { AnimatePresence, motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
 
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout, login } = useUser();
+  const { user, logout, login, refreshUser } = useUser();
+  const [xpNotification, setXpNotification] = useState(null);
+  const prevXpRef = useRef(user?.xp || 0);
 
   const navItems = [
     { path: "/", icon: Home, label: "GŁÓWNA" },
@@ -29,6 +33,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { path: "/worst-charts", icon: TrendingDown, label: "LISTA GNIOTÓW" },
     { path: "/requests", icon: Music, label: "PROPOZYCJE" },
     { path: "/schedule", icon: Calendar, label: "KALENDARZ" },
+    { path: "/leaderboard", icon: Trophy, label: "RANKING" },
   ];
 
   if (user) {
@@ -57,6 +62,37 @@ export default function Sidebar({ isOpen, onClose }) {
     onClose?.();
   };
 
+  useEffect(() => {
+    if (!user) return;
+
+    const currentXp = user.xp || 0;
+    const prevXp = prevXpRef.current;
+
+    if (currentXp > prevXp) {
+      const xpGained = currentXp - prevXp;
+      let message = "";
+
+      if (xpGained === 10) {
+        message = "polubiono utwór";
+      } else if (xpGained >= 1 && xpGained < 10) {
+        message = "czas słuchania";
+      }
+
+      setXpNotification({ xp: xpGained, message });
+      setTimeout(() => setXpNotification(null), 3000);
+    }
+
+    prevXpRef.current = currentXp;
+  }, [user?.xp]);
+
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      refreshUser();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [user, refreshUser]);
+
   const sidebarContent = (
     <>
       <div className="p-3 border-b border-white/5">
@@ -71,22 +107,81 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
         )}
         {user ? (
-          <div className="flex items-center gap-2.5 pt-1">
-            {user.avatar && (
-              <img
-                src={user.avatar}
-                alt={user.username}
-                className="w-8 h-8 border border-primary/50 rounded"
-              />
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="font-mono text-xs text-text-primary truncate">
-                {user.username}
-              </div>
-              <div className="font-mono text-[10px] text-text-secondary">
-                {user.is_admin ? "ADMIN" : "USER"}
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center gap-2.5">
+              {user.avatar && (
+                <img
+                  src={user.avatar}
+                  alt={user.username}
+                  className="w-8 h-8 border border-primary/50 rounded"
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="font-mono text-xs text-text-primary truncate">
+                  {user.username}
+                </div>
+                <div className="font-mono text-[10px] text-text-secondary">
+                  {user.is_admin ? "ADMIN" : user.rank?.name || "USER"}
+                </div>
               </div>
             </div>
+            {user.rank && (
+              <div className="space-y-2">
+                <div
+                  className="w-full rounded-full h-1 overflow-hidden relative"
+                  style={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                >
+                  <motion.div
+                    className="h-2 rounded-full"
+                    style={{
+                      backgroundColor: "var(--accent-magenta)",
+                      minWidth: user.rank.progress > 0 ? "2px" : "0",
+                    }}
+                    initial={{ width: `${user.rank.progress || 0}%` }}
+                    animate={{ width: `${user.rank.progress || 0}%` }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                  />
+                </div>
+                <div className="flex justify-between items-center text-[10px] font-mono">
+                  <AnimatePresence mode="wait">
+                    {xpNotification ? (
+                      <motion.span
+                        key="notification"
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        className="text-accent font-bold"
+                      >
+                        +{xpNotification.xp} XP
+                        {xpNotification.message && (
+                          <span className="text-primary/80 ml-1">
+                            - {xpNotification.message}
+                          </span>
+                        )}
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="xp-display"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-accent font-semibold"
+                      >
+                        {user.xp || 0} /{" "}
+                        {user.rank.next_rank_xp || user.xp || 0} XP
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  {user.rank.next_rank && !xpNotification && (
+                    <span className="text-text-secondary/70 text-[9px]">
+                      {user.rank.next_rank_xp - (user.xp || 0)} do{" "}
+                      <span className="text-primary">
+                        {user.rank.next_rank}
+                      </span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <button

@@ -137,8 +137,46 @@ export default function ActivityFeed() {
       </h3>
 
       {loading ? (
-        <div className="font-mono text-[10px] text-text-secondary">
-          ŁADOWANIE...
+        <div className="space-y-1.5">
+          {[...Array(5)].map((_, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              className="flex items-center gap-2 p-1.5 bg-white/5 border border-white/10 rounded-sm"
+            >
+              <motion.div
+                animate={{ opacity: [0.3, 0.6, 0.3] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: idx * 0.1,
+                }}
+                className="w-3.5 h-3.5 bg-white/20 rounded"
+              />
+              <div className="flex-1 space-y-1">
+                <motion.div
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: idx * 0.1,
+                  }}
+                  className="h-2.5 bg-white/20 rounded w-3/4"
+                />
+                <motion.div
+                  animate={{ opacity: [0.2, 0.4, 0.2] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: idx * 0.15,
+                  }}
+                  className="h-2 bg-white/10 rounded w-1/2"
+                />
+              </div>
+            </motion.div>
+          ))}
         </div>
       ) : feed.length === 0 ? (
         <div className="font-mono text-[10px] text-text-secondary">

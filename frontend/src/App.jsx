@@ -22,6 +22,7 @@ import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import SchedulePage from "./pages/SchedulePage";
 import AdminPanel from "./pages/AdminPanel";
+import LeaderboardPage from "./pages/LeaderboardPage";
 
 function AppContent() {
   const [searchParams] = useSearchParams();
@@ -42,6 +43,7 @@ function AppContent() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
       </Routes>
     </LayoutManager>
   );

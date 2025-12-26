@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import api from "../api";
 import PageHeader from "../components/layout/PageHeader";
 
@@ -120,10 +121,43 @@ export default function SchedulePage() {
       </div>
 
       {loading ? (
-        <div className="glass-panel p-6">
-          <div className="font-mono text-xs text-text-secondary">
-            ŁADOWANIE...
-          </div>
+        <div className="space-y-6">
+          {[0, 1, 2].map((dayNum) => (
+            <motion.div
+              key={dayNum}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: dayNum * 0.1 }}
+              className="glass-panel p-6 space-y-4 relative"
+            >
+              <motion.div
+                animate={{ opacity: [0.3, 0.6, 0.3] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: dayNum * 0.1,
+                }}
+                className="h-6 bg-white/20 rounded w-32"
+              />
+              <div className="space-y-2">
+                {[1, 2].map((idx) => (
+                  <motion.div
+                    key={idx}
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: (dayNum * 0.1) + (idx * 0.1),
+                    }}
+                    className="p-3 bg-white/5 border border-white/10"
+                  >
+                    <div className="h-4 bg-white/20 rounded w-3/4 mb-2" />
+                    <div className="h-3 bg-white/10 rounded w-1/2" />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          ))}
         </div>
       ) : Object.keys(showsByDay).length === 0 ? (
         <div className="glass-panel p-6">

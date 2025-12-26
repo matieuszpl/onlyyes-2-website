@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { useUser } from "../contexts/UserContext";
 import { LogOut, LogIn } from "lucide-react";
 
@@ -13,7 +14,25 @@ export default function Navbar() {
           </div>
           <div className="flex items-center gap-4">
             {loading ? (
-              <div className="font-mono text-xs text-text-secondary">ŁADOWANIE...</div>
+              <div className="flex items-center gap-2">
+                <motion.div
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                  }}
+                  className="w-8 h-8 bg-white/10 rounded border border-primary"
+                />
+                <motion.div
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: 0.1,
+                  }}
+                  className="h-4 bg-white/20 rounded w-20"
+                />
+              </div>
             ) : user ? (
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">

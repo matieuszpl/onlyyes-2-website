@@ -102,8 +102,48 @@ export default function AdminPanel() {
       </div>
 
       {loading ? (
-        <div className="glass-panel p-8 text-center">
-          <div className="font-mono text-text-secondary">ŁADOWANIE...</div>
+        <div className="glass-panel p-4">
+          <div className="space-y-2">
+            {[...Array(5)].map((_, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: idx * 0.05 }}
+                className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-sm"
+              >
+                <motion.div
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: idx * 0.1,
+                  }}
+                  className="w-10 h-10 bg-white/10 rounded"
+                />
+                <div className="flex-1 space-y-2">
+                  <motion.div
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: idx * 0.1,
+                    }}
+                    className="h-4 bg-white/20 rounded w-32"
+                  />
+                  <motion.div
+                    animate={{ opacity: [0.2, 0.4, 0.2] }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: idx * 0.15,
+                    }}
+                    className="h-3 bg-white/10 rounded w-48"
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       ) : (
         <>

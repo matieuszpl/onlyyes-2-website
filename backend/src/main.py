@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import httpx
 import asyncio
 
@@ -16,6 +16,7 @@ from .database import engine, Base, get_db
 from . import models, auth, config
 from .services.azuracast import azuracast_client
 from .services.event_broadcaster import event_broadcaster
+from .services.xp_system import XP_PER_VOTE, XP_PER_MINUTE_LISTENING, get_rank
 import logging
 
 logger = logging.getLogger(__name__)
@@ -38,16 +39,133 @@ async def background_polling():
             logger.error(f"Background polling error: {e}", exc_info=True)
         await asyncio.sleep(2)
 
+async def background_xp_tracking():
+    """Background task do śledzenia czasu słuchania i przyznawania XP"""
+    from .database import AsyncSessionLocal
+    
+    while True:
+        try:
+            await asyncio.sleep(60)
+            
+            active_listeners = event_broadcaster.get_active_listeners()
+            authenticated_users = [l for l in active_listeners if not l.get("is_guest") and l.get("user_id")]
+            
+            if not authenticated_users:
+                continue
+            
+            for listener in authenticated_users:
+                user_id = listener["user_id"]
+                retries = 3
+                for attempt in range(retries):
+                    try:
+                        async with AsyncSessionLocal() as db:
+                            result = await db.execute(select(models.User).where(models.User.id == user_id))
+                            user = result.scalar_one_or_none()
+                            
+                            if not user:
+                                break
+                            
+                            result = await db.execute(
+                                select(models.ListeningSession).where(
+                                    models.ListeningSession.user_id == user_id,
+                                    models.ListeningSession.end_time.is_(None)
+                                ).order_by(desc(models.ListeningSession.start_time))
+                            )
+                            active_session = result.scalar_one_or_none()
+                            
+                            now = datetime.now(timezone.utc)
+                            
+                            if not active_session:
+                                new_session = models.ListeningSession(
+                                    user_id=user_id,
+                                    start_time=now
+                                )
+                                db.add(new_session)
+                                await db.commit()
+                            else:
+                                start_time = active_session.start_time
+                                if start_time.tzinfo is None:
+                                    start_time = start_time.replace(tzinfo=timezone.utc)
+                                
+                                duration = (now - start_time).total_seconds()
+                                minutes_listened = int(duration / 60)
+                                
+                                if minutes_listened >= 1:
+                                    xp_to_award = minutes_listened * XP_PER_MINUTE_LISTENING
+                                    user.xp = (user.xp or 0) + xp_to_award
+                                    active_session.duration_seconds = int(duration)
+                                    active_session.xp_awarded = (active_session.xp_awarded or 0) + xp_to_award
+                                    active_session.start_time = now
+                                    
+                                    xp_award = models.XpAward(
+                                        user_id=user_id,
+                                        song_id=None,
+                                        xp_amount=xp_to_award,
+                                        award_type="LISTENING"
+                                    )
+                                    db.add(xp_award)
+                                    await db.commit()
+                        break
+                    except Exception as e:
+                        if attempt < retries - 1:
+                            await asyncio.sleep(1)
+                            continue
+                        logger.error(f"Background XP tracking error for user {user_id} after {retries} attempts: {e}", exc_info=True)
+                        break
+        except Exception as e:
+            logger.error(f"Background XP tracking error: {e}", exc_info=True)
+            await asyncio.sleep(60)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        
+        from sqlalchemy import text
+        
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='xp'
+        """))
+        column_exists = result.scalar() is not None
+        
+        if not column_exists:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 0"))
+            await conn.execute(text("UPDATE users SET xp = 0 WHERE xp IS NULL"))
+            logger.info("Added xp column to users table")
+        
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='votes' AND column_name='xp_awarded'
+        """))
+        xp_awarded_exists = result.scalar() is not None
+        
+        if not xp_awarded_exists:
+            await conn.execute(text("ALTER TABLE votes ADD COLUMN xp_awarded BOOLEAN DEFAULT FALSE"))
+            await conn.execute(text("UPDATE votes SET xp_awarded = FALSE WHERE xp_awarded IS NULL"))
+            logger.info("Added xp_awarded column to votes table")
+        
+        result = await conn.execute(text("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name='xp_awards'
+        """))
+        xp_awards_exists = result.scalar() is not None
+        
+        if not xp_awards_exists:
+            await conn.run_sync(Base.metadata.create_all)
+            logger.info("Created xp_awards table")
     
-    task = asyncio.create_task(background_polling())
+    task1 = asyncio.create_task(background_polling())
+    task2 = asyncio.create_task(background_xp_tracking())
     yield
-    task.cancel()
+    task1.cancel()
+    task2.cancel()
     try:
-        await task
+        await task1
+        await task2
     except asyncio.CancelledError:
         pass
     await engine.dispose()
@@ -129,12 +247,16 @@ async def auth_callback(request: Request, db: AsyncSession = Depends(get_db)):
 async def read_users_me(request: Request, db: AsyncSession = Depends(get_db)):
     user = await auth.get_current_user(request, db)
     if user:
+        xp = user.xp or 0
+        rank_info = get_rank(xp)
         return {
             "is_logged_in": True,
             "username": user.username,
             "avatar": user.avatar_url,
             "is_admin": user.is_admin,
-            "reputation_score": user.reputation_score
+            "reputation_score": user.reputation_score,
+            "xp": xp,
+            "rank": rank_info
         }
     return {"is_logged_in": False}
 
@@ -330,6 +452,17 @@ async def radio_events(request: Request, db: AsyncSession = Depends(get_db)):
                     yield ": keepalive\n\n"
                     event_broadcaster.update_listener_activity(listener_id)
         finally:
+            if user:
+                result = await db.execute(
+                    select(models.ListeningSession).where(
+                        models.ListeningSession.user_id == user.id,
+                        models.ListeningSession.end_time.is_(None)
+                    ).order_by(desc(models.ListeningSession.start_time))
+                )
+                active_session = result.scalar_one_or_none()
+                if active_session:
+                    active_session.end_time = datetime.now(timezone.utc)
+                    await db.commit()
             event_broadcaster.disconnect(queue)
             event_broadcaster.unregister_listener(listener_id)
     
@@ -415,18 +548,46 @@ async def create_vote(vote: VoteRequest, request: Request, db: AsyncSession = De
     )
     existing_vote = result.scalar_one_or_none()
     
+    should_award_xp = False
+    
+    xp_check = await db.execute(
+        select(models.XpAward).where(
+            models.XpAward.user_id == user.id,
+            models.XpAward.song_id == vote.song_id,
+            models.XpAward.award_type == "VOTE"
+        )
+    )
+    xp_already_awarded = xp_check.scalar_one_or_none() is not None
+    
     if existing_vote:
         existing_vote.vote_type = vote.vote_type
+        if not xp_already_awarded:
+            should_award_xp = True
+            existing_vote.xp_awarded = True
     else:
         new_vote = models.Vote(
             user_id=user.id,
             song_id=vote.song_id,
-            vote_type=vote.vote_type
+            vote_type=vote.vote_type,
+            xp_awarded=not xp_already_awarded
         )
         db.add(new_vote)
+        if not xp_already_awarded:
+            should_award_xp = True
+    
+    if should_award_xp:
+        user.xp = (user.xp or 0) + XP_PER_VOTE
+        xp_award = models.XpAward(
+            user_id=user.id,
+            song_id=vote.song_id,
+            xp_amount=XP_PER_VOTE,
+            award_type="VOTE"
+        )
+        db.add(xp_award)
     
     await db.commit()
-    return {"status": "success", "vote_type": vote.vote_type}
+    await db.refresh(user)
+    return {"status": "success", "vote_type": vote.vote_type, "xp_awarded": should_award_xp}
 
 @app.delete("/api/votes/{song_id}")
 async def delete_vote(song_id: str, request: Request, db: AsyncSession = Depends(get_db)):
@@ -753,6 +914,98 @@ async def get_user_history(request: Request, db: AsyncSession = Depends(get_db))
     history.sort(key=lambda x: x["created_at"], reverse=True)
     return history[:20]
 
+@app.get("/api/users/me/xp-history")
+async def get_user_xp_history(request: Request, db: AsyncSession = Depends(get_db)):
+    from datetime import timedelta
+    
+    user = await auth.get_current_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    xp_history = []
+    
+    votes_result = await db.execute(
+        select(models.XpAward)
+        .where(
+            models.XpAward.user_id == user.id,
+            models.XpAward.award_type == "VOTE",
+            models.XpAward.song_id.isnot(None)
+        )
+        .order_by(desc(models.XpAward.created_at))
+        .limit(100)
+    )
+    votes = votes_result.scalars().all()
+    
+    for award in votes:
+        song_info = await azuracast_client.get_song_info(award.song_id)
+        xp_history.append({
+            "id": f"award_{award.id}",
+            "type": "vote",
+            "xp": award.xp_amount,
+            "description": "Głosowanie na utwór",
+            "title": song_info.get("title", f"Song {award.song_id}") if song_info else f"Song {award.song_id}",
+            "artist": song_info.get("artist", "Unknown") if song_info else "Unknown",
+            "created_at": award.created_at.isoformat()
+        })
+    
+    listening_result = await db.execute(
+        select(models.XpAward)
+        .where(
+            models.XpAward.user_id == user.id,
+            models.XpAward.award_type == "LISTENING"
+        )
+        .order_by(desc(models.XpAward.created_at))
+        .limit(500)
+    )
+    listening_awards = listening_result.scalars().all()
+    
+    if listening_awards:
+        grouped_sessions = []
+        current_group = []
+        
+        for award in listening_awards:
+            if not current_group:
+                current_group.append(award)
+            else:
+                last_award = current_group[-1]
+                time_diff = (last_award.created_at - award.created_at).total_seconds()
+                
+                if time_diff <= 300:
+                    current_group.append(award)
+                else:
+                    if current_group:
+                        total_xp = sum(a.xp_amount for a in current_group)
+                        minutes = total_xp
+                        grouped_sessions.append({
+                            "id": f"session_{current_group[0].id}",
+                            "type": "listening",
+                            "xp": total_xp,
+                            "description": f"Czas słuchania ({minutes} min)",
+                            "title": None,
+                            "artist": None,
+                            "created_at": current_group[0].created_at.isoformat()
+                        })
+                    current_group = [award]
+        
+        if current_group:
+            total_xp = sum(a.xp_amount for a in current_group)
+            minutes = total_xp
+            grouped_sessions.append({
+                "id": f"session_{current_group[0].id}",
+                "type": "listening",
+                "xp": total_xp,
+                "description": f"Czas słuchania ({minutes} min)",
+                "title": None,
+                "artist": None,
+                "created_at": current_group[0].created_at.isoformat()
+            })
+        
+        xp_history.extend(grouped_sessions)
+    
+    xp_history.sort(key=lambda x: x["created_at"] if x["created_at"] else "", reverse=True)
+    
+    return xp_history[:100]
+
 @app.get("/api/users/me/stats")
 async def get_user_stats(request: Request, db: AsyncSession = Depends(get_db)):
     user = await auth.get_current_user(request, db)
@@ -772,6 +1025,33 @@ async def get_user_stats(request: Request, db: AsyncSession = Depends(get_db)):
         "votes_count": votes_count or 0,
         "reputation_score": user.reputation_score
     }
+
+@app.get("/api/leaderboard")
+async def get_leaderboard(limit: int = 100, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(models.User)
+        .order_by(desc(models.User.xp))
+        .limit(limit)
+    )
+    users = result.scalars().all()
+    
+    leaderboard = []
+    for idx, user in enumerate(users, 1):
+        xp = user.xp or 0
+        rank_info = get_rank(xp)
+        leaderboard.append({
+            "rank": idx,
+            "id": user.id,
+            "username": user.username,
+            "avatar_url": user.avatar_url,
+            "xp": xp,
+            "rank_name": rank_info["name"],
+            "progress": rank_info["progress"],
+            "next_rank": rank_info["next_rank"],
+            "next_rank_xp": rank_info["next_rank_xp"],
+        })
+    
+    return leaderboard
 
 @app.get("/api/users/{user_id}/stats")
 async def get_user_stats_by_id(user_id: int, db: AsyncSession = Depends(get_db)):

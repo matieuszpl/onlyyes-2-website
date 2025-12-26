@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Calendar } from "lucide-react";
 import api from "../api";
@@ -199,8 +200,48 @@ export default function ScheduledShows() {
         </div>
 
         {loading ? (
-          <div className="font-mono text-[10px] text-text-secondary">
-            ŁADOWANIE...
+          <div className="space-y-3">
+            {[...Array(3)].map((_, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: idx * 0.05 }}
+                className="p-1.5 bg-white/5 border border-white/10 rounded-sm"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 space-y-1.5">
+                    <motion.div
+                      animate={{ opacity: [0.3, 0.6, 0.3] }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        delay: idx * 0.1,
+                      }}
+                      className="h-2.5 bg-white/20 rounded w-3/4"
+                    />
+                    <motion.div
+                      animate={{ opacity: [0.2, 0.4, 0.2] }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        delay: idx * 0.15,
+                      }}
+                      className="h-2 bg-white/10 rounded w-1/2"
+                    />
+                  </div>
+                  <motion.div
+                    animate={{ opacity: [0.2, 0.4, 0.2] }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: idx * 0.1,
+                    }}
+                    className="h-2 bg-white/10 rounded w-16"
+                  />
+                </div>
+              </motion.div>
+            ))}
           </div>
         ) : shows.length === 0 ? (
           <div className="font-mono text-[10px] text-text-secondary">

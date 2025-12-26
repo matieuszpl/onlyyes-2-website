@@ -112,8 +112,64 @@ export default function ChartsArchive() {
       </div>
 
       {loading ? (
-        <div className="font-mono text-xs text-text-secondary">
-          ŁADOWANIE...
+        <div className="space-y-2">
+          {[...Array(10)].map((_, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: idx * 0.05 }}
+              className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-sm"
+            >
+              <motion.div
+                animate={{ opacity: [0.3, 0.6, 0.3] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: idx * 0.1,
+                }}
+                className="w-12 h-6 bg-white/20 rounded"
+              />
+              <motion.div
+                animate={{ opacity: [0.3, 0.6, 0.3] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: idx * 0.1,
+                }}
+                className="w-12 h-12 bg-white/10 rounded"
+              />
+              <div className="flex-1 space-y-2">
+                <motion.div
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: idx * 0.1,
+                  }}
+                  className="h-4 bg-white/20 rounded w-3/4"
+                />
+                <motion.div
+                  animate={{ opacity: [0.2, 0.4, 0.2] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: idx * 0.15,
+                  }}
+                  className="h-3 bg-white/10 rounded w-1/2"
+                />
+              </div>
+              <motion.div
+                animate={{ opacity: [0.2, 0.4, 0.2] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: idx * 0.1,
+                }}
+                className="h-3 bg-white/10 rounded w-16"
+              />
+            </motion.div>
+          ))}
         </div>
       ) : (
         <div className="space-y-2">
