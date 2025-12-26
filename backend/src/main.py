@@ -1080,13 +1080,19 @@ async def get_user_stats_by_id(user_id: int, db: AsyncSession = Depends(get_db))
         select(func.count(models.Vote.id)).where(models.Vote.user_id == user.id)
     )
     
+    xp = user.xp or 0
+    rank_info = get_rank(xp)
+    
     return {
         "user_id": user.id,
         "username": user.username,
         "avatar_url": user.avatar_url,
+        "is_admin": user.is_admin,
         "suggestions_count": suggestions_count or 0,
         "votes_count": votes_count or 0,
-        "reputation_score": user.reputation_score
+        "reputation_score": user.reputation_score,
+        "xp": xp,
+        "rank": rank_info
     }
 
 # --- PLAYLISTS ---
@@ -1153,6 +1159,7 @@ async def get_activity(limit: int = 20, db: AsyncSession = Depends(get_db)):
                 "icon": "heart",
                 "user_id": user.id,
                 "username": user.username,
+                "avatar_url": user.avatar_url,
                 "vote_type": vote.vote_type
             })
         
@@ -1171,7 +1178,8 @@ async def get_activity(limit: int = 20, db: AsyncSession = Depends(get_db)):
                 "timestamp": suggestion.created_at.isoformat() if suggestion.created_at else None,
                 "icon": "music",
                 "user_id": user.id,
-                "username": user.username
+                "username": user.username,
+                "avatar_url": user.avatar_url
             })
         
         # Sortuj po czasie i zwróć najnowsze
@@ -1294,6 +1302,16 @@ async def get_full_radio_info(request: Request, db: AsyncSession = Depends(get_d
         select(func.count(models.Vote.id)).where(models.Vote.vote_type == "DISLIKE")
     )
     
+    active_listeners = event_broadcaster.get_active_listeners()
+    total_active_listeners = len(active_listeners)
+    playing_listeners = [l for l in active_listeners if l.get("is_playing", False)]
+    total_playing_listeners = len(playing_listeners)
+    
+    authenticated_active = [l for l in active_listeners if not l.get("is_guest") and l.get("user_id")]
+    authenticated_playing = [l for l in playing_listeners if not l.get("is_guest") and l.get("user_id")]
+    guests_active = [l for l in active_listeners if l.get("is_guest")]
+    guests_playing = [l for l in playing_listeners if l.get("is_guest")]
+    
     return {
         "station": station_info or {},
         "now_playing": now_playing or {},
@@ -1302,6 +1320,18 @@ async def get_full_radio_info(request: Request, db: AsyncSession = Depends(get_d
             "total_votes": total_votes or 0,
             "total_suggestions": total_suggestions or 0,
             "total_likes": total_likes or 0,
-            "total_dislikes": total_dislikes or 0
+            "total_dislikes": total_dislikes or 0,
+            "active_listeners": {
+                "total": total_active_listeners,
+                "playing": total_playing_listeners,
+                "users": {
+                    "active": len(authenticated_active),
+                    "playing": len(authenticated_playing)
+                },
+                "guests": {
+                    "active": len(guests_active),
+                    "playing": len(guests_playing)
+                }
+            }
         }
     }

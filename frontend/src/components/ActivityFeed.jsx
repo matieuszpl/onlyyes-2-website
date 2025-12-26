@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Music, Heart, UserPlus, Radio, X } from "lucide-react";
+import { Music, Heart, UserPlus, Radio, X, Activity } from "lucide-react";
 import api from "../api";
+import UserTooltip from "./UserTooltip";
 
 const iconMap = {
   heart: Heart,
@@ -75,6 +76,7 @@ export default function ActivityFeed() {
             text: item.text,
             username: item.username,
             user_id: item.user_id,
+            avatar_url: item.avatar_url,
             type: item.type,
             vote_type: item.vote_type,
             color: getActivityColor(item.type, item.vote_type),
@@ -119,12 +121,14 @@ export default function ActivityFeed() {
     return (
       <>
         {parts[0]}
-        <span
-          onClick={() => handleUserClick(item.user_id)}
-          className="text-primary hover:text-accent-cyan cursor-pointer font-bold transition-colors"
-        >
-          {item.username}
-        </span>
+        <UserTooltip userId={item.user_id} username={item.username}>
+          <span
+            onClick={() => handleUserClick(item.user_id)}
+            className="text-primary hover:text-accent-cyan cursor-pointer font-bold transition-colors"
+          >
+            {item.username}
+          </span>
+        </UserTooltip>
         {parts[1]}
       </>
     );
@@ -132,9 +136,12 @@ export default function ActivityFeed() {
 
   return (
     <div className="glass-panel p-4 space-y-2 relative">
-      <h3 className="font-header text-sm text-primary uppercase tracking-wider mb-2">
-        AKTYWNOŚĆ
-      </h3>
+      <div className="flex items-center gap-2 mb-2">
+        <Activity size={14} className="text-primary" />
+        <h3 className="font-header text-sm text-primary uppercase tracking-wider">
+          AKTYWNOŚĆ
+        </h3>
+      </div>
 
       {loading ? (
         <div className="space-y-1.5">
@@ -194,8 +201,19 @@ export default function ActivityFeed() {
                 transition={{ delay: idx * 0.05 }}
                 className="flex items-center gap-2 p-1.5 bg-white/5 border border-white/10 hover:border-primary/50 transition-all rounded-sm"
               >
-                <Icon size={14} className={item.color} />
-                <div className="flex-1">
+                {item.avatar_url ? (
+                  <img
+                    src={item.avatar_url}
+                    alt={item.username}
+                    className="w-6 h-6 border border-primary/50 rounded-full object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-6 h-6 border border-primary/50 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                    <UserPlus size={12} className="text-text-secondary" />
+                  </div>
+                )}
+                <Icon size={12} className={item.color} />
+                <div className="flex-1 min-w-0">
                   <div className="font-mono text-[10px] text-text-primary">
                     {renderActivityText(item)}
                   </div>

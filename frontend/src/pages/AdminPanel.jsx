@@ -3,8 +3,17 @@ import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import api from "../api";
-import { Users, ThumbsUp, ThumbsDown, Radio, BarChart3, Shield, Music } from "lucide-react";
+import {
+  Users,
+  ThumbsUp,
+  ThumbsDown,
+  Radio,
+  BarChart3,
+  Shield,
+  Music,
+} from "lucide-react";
 import PageHeader from "../components/layout/PageHeader";
+import UserTooltip from "../components/UserTooltip";
 
 export default function AdminPanel() {
   const { user } = useUser();
@@ -171,9 +180,11 @@ export default function AdminPanel() {
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="font-mono text-sm text-text-primary truncate">
-                          {u.username}
-                        </div>
+                        <UserTooltip userId={u.id} username={u.username}>
+                          <div className="font-mono text-sm text-text-primary truncate">
+                            {u.username}
+                          </div>
+                        </UserTooltip>
                         {u.is_admin && (
                           <span className="font-mono text-[10px] text-primary bg-primary/20 px-2 py-0.5 rounded">
                             ADMIN
@@ -217,13 +228,18 @@ export default function AdminPanel() {
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="font-mono text-sm text-text-primary truncate">
-                          {v.username}
-                        </div>
+                        <UserTooltip userId={v.user_id} username={v.username}>
+                          <div className="font-mono text-sm text-text-primary truncate">
+                            {v.username}
+                          </div>
+                        </UserTooltip>
                         {v.vote_type === "LIKE" ? (
                           <ThumbsUp size={14} className="text-accent-cyan" />
                         ) : (
-                          <ThumbsDown size={14} className="text-accent-magenta" />
+                          <ThumbsDown
+                            size={14}
+                            className="text-accent-magenta"
+                          />
                         )}
                       </div>
                       <div className="font-mono text-xs text-text-secondary truncate">
@@ -249,7 +265,9 @@ export default function AdminPanel() {
                 ŁĄCZNIE: {suggestions.length} propozycji
               </div>
               {suggestions.length === 0 ? (
-                <p className="font-mono text-sm text-text-secondary">BRAK PROPOZYCJI</p>
+                <p className="font-mono text-sm text-text-secondary">
+                  BRAK PROPOZYCJI
+                </p>
               ) : (
                 <div className="space-y-2 max-h-[600px] overflow-y-auto">
                   {suggestions.map((suggestion) => (
@@ -269,7 +287,9 @@ export default function AdminPanel() {
                             {suggestion.source_type} • {suggestion.raw_input}
                           </div>
                           <div className="font-mono text-[10px] text-text-secondary mt-2">
-                            {new Date(suggestion.created_at).toLocaleString("pl-PL")}
+                            {new Date(suggestion.created_at).toLocaleString(
+                              "pl-PL"
+                            )}
                           </div>
                         </div>
                         <span
@@ -365,6 +385,51 @@ export default function AdminPanel() {
                 </div>
               </div>
 
+              {radioInfo.statistics.active_listeners && (
+                <div className="glass-panel p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users size={18} className="text-primary" />
+                    <h2 className="font-header text-sm text-primary uppercase tracking-wider">
+                      AKTYWNI SŁUCHACZE
+                    </h2>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                      <div className="font-mono text-[10px] text-text-secondary mb-1">
+                        NA STRONIE
+                      </div>
+                      <div className="font-mono text-lg text-primary">
+                        {radioInfo.statistics.active_listeners.total}
+                      </div>
+                      <div className="font-mono text-[9px] text-text-secondary mt-1">
+                        Użytkownicy:{" "}
+                        {radioInfo.statistics.active_listeners.users.active}
+                      </div>
+                      <div className="font-mono text-[9px] text-text-secondary">
+                        Goście:{" "}
+                        {radioInfo.statistics.active_listeners.guests.active}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                      <div className="font-mono text-[10px] text-text-secondary mb-1">
+                        ODTWARZAJĄ
+                      </div>
+                      <div className="font-mono text-lg text-accent-cyan">
+                        {radioInfo.statistics.active_listeners.playing}
+                      </div>
+                      <div className="font-mono text-[9px] text-text-secondary mt-1">
+                        Użytkownicy:{" "}
+                        {radioInfo.statistics.active_listeners.users.playing}
+                      </div>
+                      <div className="font-mono text-[9px] text-text-secondary">
+                        Goście:{" "}
+                        {radioInfo.statistics.active_listeners.guests.playing}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {radioInfo.station && (
                 <div className="glass-panel p-4">
                   <h2 className="font-header text-sm text-primary uppercase tracking-wider mb-4">
@@ -372,19 +437,25 @@ export default function AdminPanel() {
                   </h2>
                   <div className="space-y-2 font-mono text-xs">
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Słuchacze online:</span>
+                      <span className="text-text-secondary">
+                        Słuchacze online:
+                      </span>
                       <span className="text-text-primary">
                         {radioInfo.station.listeners_online || 0}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Utwory w bazie:</span>
+                      <span className="text-text-secondary">
+                        Utwory w bazie:
+                      </span>
                       <span className="text-text-primary">
                         {radioInfo.station.songs_in_database || 0}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Odtworzone dziś:</span>
+                      <span className="text-text-secondary">
+                        Odtworzone dziś:
+                      </span>
                       <span className="text-text-primary">
                         {radioInfo.station.songs_played_today || 0}
                       </span>
@@ -415,4 +486,3 @@ export default function AdminPanel() {
     </div>
   );
 }
-

@@ -9,7 +9,11 @@ export default function ActiveListenersWidget({ compact = false }) {
     const loadListeners = async () => {
       try {
         const res = await api.get("/radio/active-listeners");
-        setListeners(res.data.listeners || []);
+        const allListeners = res.data.listeners || [];
+        const playingListeners = allListeners.filter(
+          (l) => l.is_playing === true
+        );
+        setListeners(playingListeners);
       } catch (error) {
         console.error("Load listeners error:", error);
       }
@@ -27,7 +31,11 @@ export default function ActiveListenersWidget({ compact = false }) {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "active_listeners" && data.data) {
-          setListeners(data.data.listeners || []);
+          const allListeners = data.data.listeners || [];
+          const playingListeners = allListeners.filter(
+            (l) => l.is_playing === true
+          );
+          setListeners(playingListeners);
         }
       } catch (error) {
         // Ignore parsing errors
