@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "./Sidebar";
@@ -9,6 +10,7 @@ export default function LayoutManager({ children }) {
   const [searchParams] = useSearchParams();
   const isKiosk = searchParams.get("mode") === "kiosk";
   const isHome = location.pathname === "/";
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (isKiosk) {
     return <div className="h-screen overflow-hidden">{children}</div>;
@@ -16,7 +18,7 @@ export default function LayoutManager({ children }) {
 
   return (
     <div className="min-h-screen flex">
-      <Sidebar />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="flex-1 md:ml-56 pb-32 md:pb-24 w-full max-w-full overflow-x-hidden">
         <AnimatePresence key={location.pathname}>
           <motion.div
@@ -36,7 +38,7 @@ export default function LayoutManager({ children }) {
           </AnimatePresence>
         )}
       </main>
-      <BottomNav />
+      <BottomNav onMenuClick={() => setSidebarOpen(true)} />
     </div>
   );
 }

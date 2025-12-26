@@ -60,20 +60,24 @@ app = FastAPI(title="ONLY YES Radio API", lifespan=lifespan)
 # To naprawia problem generowania linków na złym porcie/protokole
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
-# 3. CORS - Zezwalamy na Twój port
+# 3. CORS - Zezwalamy na domenę produkcyjną
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:9523", "http://127.0.0.1:9523"],
+    allow_origins=[
+        "https://onlyyes.matieusz.pl",
+        "http://localhost:9523",
+        "http://127.0.0.1:9523",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 4. Sesje - Ustawienia "Insecure" dla localhost
+# 4. Sesje - Ustawienia dla HTTPS
 app.add_middleware(
     SessionMiddleware, 
     secret_key=config.settings.secret_key,
-    https_only=False,
+    https_only=True,
     same_site="lax",
     path="/"
 )

@@ -11,12 +11,14 @@ import {
   Monitor,
   LogIn,
   Shield,
+  X,
 } from "lucide-react";
 import { useUser } from "../../contexts/UserContext";
 import { cn } from "../../utils/cn";
 import ThemeDropdown from "../ThemeDropdown";
+import { AnimatePresence, motion } from "framer-motion";
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, login } = useUser();
@@ -38,11 +40,36 @@ export default function Sidebar() {
 
   const handleKioskMode = () => {
     navigate("/?mode=kiosk");
+    onClose?.();
   };
 
-  return (
-    <aside className="hidden md:flex fixed left-0 top-0 h-full w-56 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col z-30">
+  const handleLinkClick = () => {
+    onClose?.();
+  };
+
+  const handleLogin = () => {
+    login();
+    onClose?.();
+  };
+
+  const handleLogout = () => {
+    logout();
+    onClose?.();
+  };
+
+  const sidebarContent = (
+    <>
       <div className="p-3 border-b border-white/5">
+        {onClose && (
+          <div className="flex justify-end mb-2 md:hidden">
+            <button
+              onClick={onClose}
+              className="p-1 text-text-secondary hover:text-primary transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        )}
         {user ? (
           <div className="flex items-center gap-2.5 pt-1">
             {user.avatar && (
@@ -63,7 +90,7 @@ export default function Sidebar() {
           </div>
         ) : (
           <button
-            onClick={login}
+            onClick={handleLogin}
             className="group w-full flex items-center justify-center gap-2 px-2.5 py-2 font-mono text-[10px] font-bold text-black bg-[#5865F2] hover:bg-[#4752C4] rounded-sm transition-all duration-200 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transform hover:shadow-lg"
           >
             <LogIn
@@ -75,7 +102,7 @@ export default function Sidebar() {
         )}
       </div>
 
-      <nav className="flex-1 p-2 space-y-1">
+      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -83,6 +110,7 @@ export default function Sidebar() {
             <Link
               key={item.path}
               to={item.path}
+              onClick={handleLinkClick}
               className={cn(
                 "flex items-center gap-2.5 px-3 py-2 font-mono text-xs transition-all rounded-sm",
                 isActive
@@ -110,6 +138,7 @@ export default function Sidebar() {
         </button>
         <Link
           to="/settings"
+          onClick={handleLinkClick}
           className="flex items-center gap-2.5 px-3 py-2 font-mono text-xs text-text-secondary hover:text-primary hover:bg-white/5 rounded-sm transition-all"
         >
           <Settings size={16} />
@@ -117,7 +146,7 @@ export default function Sidebar() {
         </Link>
         {user && (
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full flex items-center gap-2.5 px-3 py-2 font-mono text-xs text-text-secondary hover:text-secondary hover:bg-white/5 rounded-sm transition-all"
           >
             <LogOut size={16} />
@@ -125,6 +154,39 @@ export default function Sidebar() {
           </button>
         )}
       </div>
+    </>
+  );
+
+  if (onClose) {
+    return (
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+            />
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed left-0 top-0 h-full w-64 bg-black/95 backdrop-blur-xl border-r border-white/5 flex-col z-50 md:hidden flex"
+            >
+              {sidebarContent}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    );
+  }
+
+  return (
+    <aside className="hidden md:flex fixed left-0 top-0 h-full w-56 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col z-30">
+      {sidebarContent}
     </aside>
   );
 }

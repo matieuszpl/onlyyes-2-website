@@ -8,3 +8,6 @@ export default function CRTEffect() {
   return <div className="crt-effect" />;
 }
 
+
+
+

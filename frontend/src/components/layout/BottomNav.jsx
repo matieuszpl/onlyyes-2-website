@@ -1,9 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Music, TrendingUp, User } from "lucide-react";
+import { Home, Music, TrendingUp, User, Menu } from "lucide-react";
 import { useUser } from "../../contexts/UserContext";
 import { cn } from "../../utils/cn";
 
-export default function BottomNav() {
+export default function BottomNav({ onMenuClick }) {
   const location = useLocation();
   const { user } = useUser();
 
@@ -50,6 +50,15 @@ export default function BottomNav() {
           </Link>
         );
       })}
+      {onMenuClick && (
+        <button
+          onClick={onMenuClick}
+          className="flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all text-text-secondary hover:text-primary"
+        >
+          <Menu size={20} />
+          <span className="text-xs font-mono">Menu</span>
+        </button>
+      )}
     </nav>
   );
 }
