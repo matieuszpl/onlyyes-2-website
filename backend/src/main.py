@@ -296,8 +296,25 @@ async def get_stream_url():
     return {"streamUrl": f"{config.settings.app_base_url}/api/radio/stream"}
 
 @app.get("/api/radio/events")
-async def radio_events(request: Request):
+async def radio_events(request: Request, db: AsyncSession = Depends(get_db)):
     """Server-Sent Events endpoint dla aktualizacji radiowych"""
+    user = await auth.get_current_user(request, db)
+    
+    if user:
+        listener_id = event_broadcaster.register_listener(
+            user_id=user.id,
+            username=user.username,
+            avatar_url=user.avatar_url,
+            is_guest=False
+        )
+    else:
+        listener_id = event_broadcaster.register_listener(
+            user_id=None,
+            username="Gość",
+            avatar_url=None,
+            is_guest=True
+        )
+    
     async def event_generator():
         queue = await event_broadcaster.connect()
         try:
@@ -308,10 +325,13 @@ async def radio_events(request: Request):
                 try:
                     message = await asyncio.wait_for(queue.get(), timeout=30.0)
                     yield message
+                    event_broadcaster.update_listener_activity(listener_id)
                 except asyncio.TimeoutError:
                     yield ": keepalive\n\n"
+                    event_broadcaster.update_listener_activity(listener_id)
         finally:
             event_broadcaster.disconnect(queue)
+            event_broadcaster.unregister_listener(listener_id)
     
     return StreamingResponse(
         event_generator(),
@@ -322,6 +342,12 @@ async def radio_events(request: Request):
             "X-Accel-Buffering": "no"
         }
     )
+
+@app.get("/api/radio/active-listeners")
+async def get_active_listeners():
+    """Endpoint do pobierania listy aktualnie słuchających użytkowników"""
+    listeners = event_broadcaster.get_active_listeners()
+    return {"listeners": listeners}
 
 @app.post("/api/webhooks/radio-update")
 async def radio_update_webhook(request: Request):

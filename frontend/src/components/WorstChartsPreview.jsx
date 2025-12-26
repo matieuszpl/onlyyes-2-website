@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import ImageGlitch from "./ImageGlitch";
 import { useAlbumColors } from "../hooks/useAlbumColors";
@@ -32,19 +38,36 @@ function SongItemBackground({ thumbnail }) {
 export default function WorstChartsPreview({ limit = 10 }) {
   const [charts, setCharts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState("week");
 
   useEffect(() => {
     loadCharts();
-  }, []);
+  }, [selectedPeriod]);
 
   const loadCharts = async () => {
+    setLoading(true);
     try {
-      const res = await api.get(`/charts/worst?period=week&limit=${limit}`);
+      const res = await api.get(
+        `/charts/worst?period=${selectedPeriod}&limit=${limit}`
+      );
       setCharts(res.data);
     } catch (error) {
       console.error("Load worst charts error:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getPeriodLabel = (period) => {
+    switch (period) {
+      case "week":
+        return "TYDZIEŃ";
+      case "month":
+        return "MIESIĄC";
+      case "all":
+        return "WSZYSTKIE";
+      default:
+        return "TYDZIEŃ";
     }
   };
 
@@ -69,16 +92,124 @@ export default function WorstChartsPreview({ limit = 10 }) {
 
   return (
     <div className="glass-panel p-4 space-y-3 relative">
-      <div className="flex items-center gap-2">
-        <AlertTriangle size={16} className="text-red-500" />
-        <h3 className="font-header text-base text-primary uppercase tracking-wider">
-          NAJGORSZE {limit}
-        </h3>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-0">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={18} className="text-red-500" />
+            <h3 className="font-header text-base text-primary uppercase tracking-wider">
+              NAJGORSZE {limit}
+            </h3>
+          </div>
+          <div className="font-mono text-[10px] text-text-secondary ml-7 -mt-0.5">
+            {getPeriodLabel(selectedPeriod)}
+          </div>
+        </div>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setSelectedPeriod("week")}
+            className={`px-2 py-1 font-mono text-xs border transition-all ${
+              selectedPeriod === "week"
+                ? "bg-red-500/20 border-red-500 text-red-500"
+                : "bg-white/10 border-white/10 text-text-primary hover:border-red-500/50"
+            }`}
+          >
+            T
+          </button>
+          <button
+            onClick={() => setSelectedPeriod("month")}
+            className={`px-2 py-1 font-mono text-xs border transition-all ${
+              selectedPeriod === "month"
+                ? "bg-red-500/20 border-red-500 text-red-500"
+                : "bg-white/10 border-white/10 text-text-primary hover:border-red-500/50"
+            }`}
+          >
+            M
+          </button>
+          <button
+            onClick={() => setSelectedPeriod("all")}
+            className={`px-2 py-1 font-mono text-xs border transition-all ${
+              selectedPeriod === "all"
+                ? "bg-red-500/20 border-red-500 text-red-500"
+                : "bg-white/10 border-white/10 text-text-primary hover:border-red-500/50"
+            }`}
+          >
+            W
+          </button>
+        </div>
       </div>
 
       {loading ? (
-        <div className="font-mono text-xs text-text-secondary">
-          ŁADOWANIE...
+        <div className="space-y-2">
+          {[...Array(limit)].map((_, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: idx * 0.05 }}
+              className="flex items-center gap-3 p-2 bg-white/5 border border-white/10 rounded-sm relative overflow-hidden"
+            >
+              <div className="w-10 h-10 flex items-center justify-center shrink-0">
+                <motion.div
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: idx * 0.1,
+                  }}
+                  className="w-8 h-8 bg-red-500/20 rounded border border-red-500/30"
+                />
+              </div>
+              <div className="w-10 h-10 bg-white/10 rounded shrink-0 animate-pulse" />
+              <div className="flex-1 min-w-0 space-y-2">
+                <motion.div
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: idx * 0.1,
+                  }}
+                  className="h-3 bg-white/20 rounded w-3/4"
+                />
+                <motion.div
+                  animate={{ opacity: [0.2, 0.4, 0.2] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: idx * 0.15,
+                  }}
+                  className="h-2 bg-white/10 rounded w-1/2"
+                />
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                >
+                  <Loader2 size={14} className="text-red-500/50" />
+                </motion.div>
+                <motion.div
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: idx * 0.1,
+                  }}
+                  className="h-3 bg-white/10 rounded w-12"
+                />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      ) : charts.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+          <AlertTriangle size={32} className="text-red-500/50 mb-3" />
+          <div className="font-header text-sm text-text-primary mb-2">
+            BRAK GŁOSÓW
+          </div>
+          <div className="font-mono text-xs text-text-secondary max-w-xs">
+            Nie ma jeszcze żadnych głosów w tym okresie. Zagłosuj na utwory,
+            które Ci się nie podobają!
+          </div>
         </div>
       ) : (
         <div className="space-y-2">

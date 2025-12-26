@@ -6,6 +6,7 @@ import { useRadioEvents } from "../../contexts/RadioEventsContext";
 import VoteButtons from "../VoteButtons";
 import TextGlitch from "../TextGlitch";
 import ImageGlitch from "../ImageGlitch";
+import ActiveListenersWidget from "../ActiveListenersWidget";
 import { Play, Pause, Home, ChevronLeft } from "lucide-react";
 import { useAlbumColors } from "../../hooks/useAlbumColors";
 
@@ -275,7 +276,7 @@ export default function KioskLayout() {
 
           {/* Next Song - Full Width */}
           {nextSong && (
-            <div className="px-3 sm:px-4 pb-3 sm:pb-4 shrink-0">
+            <div className="px-3 sm:px-4 pb-3 sm:pb-4 shrink-0 space-y-2 sm:space-y-3">
               <div className="glass-panel p-2 sm:p-3 relative overflow-hidden">
                 {nextSong?.thumbnail && !nextSongColors.isDefault ? (
                   <div
@@ -311,6 +312,7 @@ export default function KioskLayout() {
                   </div>
                 </div>
               </div>
+              <ActiveListenersWidget />
             </div>
           )}
 
@@ -457,40 +459,43 @@ export default function KioskLayout() {
             <div className="space-y-3">
               {/* Next Song */}
               {nextSong && (
-                <div className="glass-panel p-4 relative overflow-hidden">
-                  {nextSong?.thumbnail && !nextSongColors.isDefault ? (
-                    <div
-                      className="absolute inset-0 opacity-[0.42] blur-[80px] scale-150 -z-10"
-                      style={{
-                        backgroundImage: `url(${nextSong.thumbnail})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      }}
-                    />
-                  ) : (
-                    <div className="absolute inset-0 opacity-[0.42] blur-[80px] -z-10 bg-gradient-to-br from-gray-600/30 via-gray-500/20 to-gray-700/30" />
-                  )}
-                  <h3 className="font-header text-sm text-primary uppercase tracking-wider mb-3 relative z-10">
-                    NASTĘPNY UTWÓR
-                  </h3>
-                  <div className="flex items-center gap-4 relative z-10">
-                    {nextSong.thumbnail && (
-                      <img
-                        src={nextSong.thumbnail}
-                        alt={nextSong.title}
-                        className="w-24 h-24 border-2 border-primary shrink-0"
+                <>
+                  <div className="glass-panel p-4 relative overflow-hidden">
+                    {nextSong?.thumbnail && !nextSongColors.isDefault ? (
+                      <div
+                        className="absolute inset-0 opacity-[0.42] blur-[80px] scale-150 -z-10"
+                        style={{
+                          backgroundImage: `url(${nextSong.thumbnail})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }}
                       />
+                    ) : (
+                      <div className="absolute inset-0 opacity-[0.42] blur-[80px] -z-10 bg-gradient-to-br from-gray-600/30 via-gray-500/20 to-gray-700/30" />
                     )}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-header text-base text-text-primary truncate">
-                        {nextSong.title}
-                      </div>
-                      <div className="font-mono text-sm text-text-secondary truncate">
-                        {nextSong.artist}
+                    <h3 className="font-header text-sm text-primary uppercase tracking-wider mb-3 relative z-10">
+                      NASTĘPNY UTWÓR
+                    </h3>
+                    <div className="flex items-center gap-4 relative z-10">
+                      {nextSong.thumbnail && (
+                        <img
+                          src={nextSong.thumbnail}
+                          alt={nextSong.title}
+                          className="w-24 h-24 border-2 border-primary shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-header text-base text-text-primary truncate">
+                          {nextSong.title}
+                        </div>
+                        <div className="font-mono text-sm text-text-secondary truncate">
+                          {nextSong.artist}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                  <ActiveListenersWidget />
+                </>
               )}
 
               {/* History */}

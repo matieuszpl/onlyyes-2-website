@@ -23,22 +23,26 @@ const getActivityColor = (type, voteType) => {
 const formatTimeAgo = (minutesAgo) => {
   if (minutesAgo < 1) return "teraz";
   if (minutesAgo < 60) return `${minutesAgo} min temu`;
-  
+
   const hoursAgo = Math.floor(minutesAgo / 60);
   if (hoursAgo < 24) {
-    return `${hoursAgo} ${hoursAgo === 1 ? "godzinę" : hoursAgo < 5 ? "godziny" : "godzin"} temu`;
+    return `${hoursAgo} ${
+      hoursAgo === 1 ? "godzinę" : hoursAgo < 5 ? "godziny" : "godzin"
+    } temu`;
   }
-  
+
   const daysAgo = Math.floor(hoursAgo / 24);
   if (daysAgo < 7) {
     return `${daysAgo} ${daysAgo === 1 ? "dzień" : "dni"} temu`;
   }
-  
+
   const weeksAgo = Math.floor(daysAgo / 7);
   if (weeksAgo < 4) {
-    return `${weeksAgo} ${weeksAgo === 1 ? "tydzień" : weeksAgo < 5 ? "tygodnie" : "tygodni"} temu`;
+    return `${weeksAgo} ${
+      weeksAgo === 1 ? "tydzień" : weeksAgo < 5 ? "tygodnie" : "tygodni"
+    } temu`;
   }
-  
+
   const monthsAgo = Math.floor(daysAgo / 30);
   if (monthsAgo === 1) return "miesiąc temu";
   return `${monthsAgo} miesięcy temu`;
@@ -57,10 +61,14 @@ export default function ActivityFeed() {
         const res = await api.get("/activity?limit=10");
         const activities = res.data.map((item) => {
           const Icon = iconMap[item.icon] || Music;
-          const timestamp = item.timestamp ? new Date(item.timestamp) : new Date();
-          const minutesAgo = Math.floor((Date.now() - timestamp.getTime()) / 60000);
+          const timestamp = item.timestamp
+            ? new Date(item.timestamp)
+            : new Date();
+          const minutesAgo = Math.floor(
+            (Date.now() - timestamp.getTime()) / 60000
+          );
           const timeText = formatTimeAgo(minutesAgo);
-          
+
           return {
             id: item.timestamp || Date.now(),
             icon: Icon,
@@ -129,9 +137,13 @@ export default function ActivityFeed() {
       </h3>
 
       {loading ? (
-        <div className="font-mono text-[10px] text-text-secondary">ŁADOWANIE...</div>
+        <div className="font-mono text-[10px] text-text-secondary">
+          ŁADOWANIE...
+        </div>
       ) : feed.length === 0 ? (
-        <div className="font-mono text-[10px] text-text-secondary">BRAK AKTYWNOŚCI</div>
+        <div className="font-mono text-[10px] text-text-secondary">
+          BRAK AKTYWNOŚCI
+        </div>
       ) : (
         <div className="space-y-1.5 max-h-48 overflow-y-auto">
           {feed.map((item, idx) => {
@@ -193,15 +205,21 @@ export default function ActivityFeed() {
             <div className="space-y-2 font-mono text-xs">
               <div className="flex justify-between">
                 <span className="text-text-secondary">PROPOZYCJE:</span>
-                <span className="text-text-primary">{userStats.suggestions_count}</span>
+                <span className="text-text-primary">
+                  {userStats.suggestions_count}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-secondary">GŁOSY:</span>
-                <span className="text-text-primary">{userStats.votes_count}</span>
+                <span className="text-text-primary">
+                  {userStats.votes_count}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-secondary">REPUTACJA:</span>
-                <span className="text-primary">{userStats.reputation_score}</span>
+                <span className="text-primary">
+                  {userStats.reputation_score}
+                </span>
               </div>
             </div>
           </motion.div>
@@ -210,4 +228,3 @@ export default function ActivityFeed() {
     </div>
   );
 }
-

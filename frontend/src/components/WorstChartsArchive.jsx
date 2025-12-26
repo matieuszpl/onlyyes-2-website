@@ -53,7 +53,10 @@ export default function WorstChartsArchive() {
     if (chart.is_new) {
       return null;
     }
-    if (chart.previous_position === null || chart.previous_position === undefined) {
+    if (
+      chart.previous_position === null ||
+      chart.previous_position === undefined
+    ) {
       return null;
     }
     if (chart.position < chart.previous_position) {
@@ -109,7 +112,9 @@ export default function WorstChartsArchive() {
       </div>
 
       {loading ? (
-        <div className="font-mono text-xs text-text-secondary">ŁADOWANIE...</div>
+        <div className="font-mono text-xs text-text-secondary">
+          ŁADOWANIE...
+        </div>
       ) : (
         <div className="space-y-2">
           {charts.map((chart, idx) => {
@@ -152,9 +157,7 @@ export default function WorstChartsArchive() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0 relative z-10">
-                  {TrendIcon && (
-                    <TrendIcon size={16} className={trend.color} />
-                  )}
+                  {TrendIcon && <TrendIcon size={16} className={trend.color} />}
                   <div className="font-mono text-xs text-text-secondary text-right">
                     {chart.votes} GŁOSÓW
                   </div>
@@ -167,4 +170,3 @@ export default function WorstChartsArchive() {
     </div>
   );
 }
-
