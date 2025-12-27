@@ -3,6 +3,7 @@ import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import api from "../api";
+import Card from "../components/Card";
 import {
   Users,
   ThumbsUp,
@@ -12,6 +13,8 @@ import {
   Shield,
   Music,
   Award,
+  Bug,
+  Lightbulb,
 } from "lucide-react";
 import PageHeader from "../components/layout/PageHeader";
 import UserTooltip from "../components/UserTooltip";
@@ -24,6 +27,7 @@ export default function AdminPanel() {
   const [users, setUsers] = useState([]);
   const [votes, setVotes] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+  const [issues, setIssues] = useState([]);
   const [radioInfo, setRadioInfo] = useState(null);
   const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -59,6 +63,9 @@ export default function AdminPanel() {
       } else if (activeTab === "suggestions") {
         const res = await api.get("/suggestions");
         setSuggestions(res.data);
+      } else if (activeTab === "issues") {
+        const res = await api.get("/admin/issues");
+        setIssues(res.data);
       } else if (activeTab === "radio") {
         const res = await api.get("/admin/radio-info");
         setRadioInfo(res.data);
@@ -97,6 +104,24 @@ export default function AdminPanel() {
       loadData();
     } catch (error) {
       console.error("Reject error:", error);
+    }
+  };
+
+  const handleApproveIssue = async (id) => {
+    try {
+      await api.post(`/admin/issues/${id}/approve`);
+      loadData();
+    } catch (error) {
+      console.error("Approve issue error:", error);
+    }
+  };
+
+  const handleRejectIssue = async (id) => {
+    try {
+      await api.post(`/admin/issues/${id}/reject`);
+      loadData();
+    } catch (error) {
+      console.error("Reject issue error:", error);
     }
   };
 
@@ -148,6 +173,7 @@ export default function AdminPanel() {
     { id: "users", label: "UŻYTKOWNICY", icon: Users },
     { id: "votes", label: "GŁOSY", icon: ThumbsUp },
     { id: "suggestions", label: "PROPOZYCJE", icon: Music },
+    { id: "issues", label: "ZGŁOSZENIA", icon: Bug },
     { id: "badges", label: "OSIĄGNIĘCIA", icon: Award },
     { id: "radio", label: "RADIO", icon: Radio },
   ];
@@ -178,15 +204,17 @@ export default function AdminPanel() {
       </div>
 
       {loading ? (
-        <div className="glass-panel p-4">
+        <Card>
           <div className="space-y-2">
             {[...Array(5)].map((_, idx) => (
-              <motion.div
+              <Card
                 key={idx}
+                as={motion.div}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: idx * 0.05 }}
-                className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-sm"
+                padding="p-4"
+                className="flex items-center gap-3"
               >
                 <motion.div
                   animate={{ opacity: [0.3, 0.6, 0.3] }}
@@ -217,26 +245,28 @@ export default function AdminPanel() {
                     className="h-3 bg-white/10 rounded w-48"
                   />
                 </div>
-              </motion.div>
+              </Card>
             ))}
           </div>
-        </div>
+        </Card>
       ) : (
         <>
           {activeTab === "users" && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="glass-panel p-4"
+              as={motion.div}
+              className=""
             >
               <div className="mb-4 font-mono text-xs text-text-secondary">
                 ŁĄCZNIE: {users.length} użytkowników
               </div>
               <div className="space-y-2 max-h-[600px] overflow-y-auto">
                 {users.map((u) => (
-                  <div
+                  <Card
                     key={u.id}
-                    className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-sm hover:border-primary/50 transition-all"
+                    padding="p-4"
+                    className="flex items-center gap-3"
                   >
                     {u.avatar_url && (
                       <img
@@ -265,17 +295,18 @@ export default function AdminPanel() {
                         <span>Propozycje: {u.suggestions_count}</span>
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             </motion.div>
           )}
 
           {activeTab === "votes" && (
-            <motion.div
+            <Card
+              as={motion.div}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="glass-panel p-4"
+              className=""
             >
               <div className="mb-4 font-mono text-xs text-text-secondary">
                 ŁĄCZNIE: {votes.length} głosów
@@ -284,7 +315,8 @@ export default function AdminPanel() {
                 {votes.map((v) => (
                   <div
                     key={v.id}
-                    className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-sm hover:border-primary/50 transition-all"
+                    padding="p-4"
+                    className="flex items-center gap-3"
                   >
                     {v.avatar_url && (
                       <img
@@ -319,14 +351,15 @@ export default function AdminPanel() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </Card>
           )}
 
           {activeTab === "suggestions" && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="glass-panel p-4"
+              as={motion.div}
+              className=""
             >
               <div className="mb-4 font-mono text-xs text-text-secondary">
                 ŁĄCZNIE: {suggestions.length} propozycji
@@ -338,10 +371,7 @@ export default function AdminPanel() {
               ) : (
                 <div className="space-y-2 max-h-[600px] overflow-y-auto">
                   {suggestions.map((suggestion) => (
-                    <div
-                      key={suggestion.id}
-                      className="bg-white/5 border border-white/10 p-4 hover:border-primary/50 transition-all rounded-sm"
-                    >
+                    <Card key={suggestion.id}>
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1 min-w-0">
                           <div className="font-header text-sm text-text-primary mb-1">
@@ -388,7 +418,110 @@ export default function AdminPanel() {
                           </button>
                         </div>
                       )}
-                    </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === "issues" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              as={motion.div}
+              className=""
+            >
+              <div className="mb-4 font-mono text-xs text-text-secondary">
+                ŁĄCZNIE: {issues.length} zgłoszeń
+              </div>
+              {issues.length === 0 ? (
+                <p className="font-mono text-sm text-text-secondary">
+                  BRAK ZGŁOSZEŃ
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                  {issues.map((issue) => (
+                    <Card key={issue.id}>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            {issue.issue_type === "BUG" ? (
+                              <Bug size={16} className="text-red-400" />
+                            ) : (
+                              <Lightbulb size={16} className="text-accent" />
+                            )}
+                            <div className="font-header text-sm text-text-primary">
+                              {issue.title}
+                            </div>
+                          </div>
+                          <div className="font-mono text-xs text-text-secondary mb-2 whitespace-pre-wrap">
+                            {issue.description}
+                          </div>
+                          <div className="flex items-center gap-3 font-mono text-[10px] text-text-secondary">
+                            {issue.username ? (
+                              <>
+                                {issue.avatar_url && (
+                                  <img
+                                    src={issue.avatar_url}
+                                    alt={issue.username}
+                                    className="w-6 h-6 border border-primary/50 rounded"
+                                  />
+                                )}
+                                <span>{issue.username}</span>
+                              </>
+                            ) : (
+                              <span>Gość</span>
+                            )}
+                            <span>•</span>
+                            <span>
+                              {new Date(issue.created_at).toLocaleString(
+                                "pl-PL"
+                              )}
+                            </span>
+                            {issue.approved_at && (
+                              <>
+                                <span>•</span>
+                                <span className="text-accent">
+                                  Zaakceptowano:{" "}
+                                  {new Date(issue.approved_at).toLocaleString(
+                                    "pl-PL"
+                                  )}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <span
+                          className={`px-3 py-1 font-mono text-xs border shrink-0 ${
+                            issue.status === "PENDING"
+                              ? "bg-yellow-500/20 border-yellow-500 text-yellow-500"
+                              : issue.status === "APPROVED"
+                              ? "bg-primary/20 border-primary text-primary"
+                              : "bg-secondary/20 border-secondary text-secondary"
+                          }`}
+                        >
+                          {issue.status}
+                        </span>
+                      </div>
+
+                      {issue.status === "PENDING" && (
+                        <div className="flex gap-2 mt-4">
+                          <button
+                            onClick={() => handleApproveIssue(issue.id)}
+                            className="btn-cut bg-primary text-black px-4 py-2 font-mono text-xs font-bold"
+                          >
+                            ZATWIERDŹ
+                          </button>
+                          <button
+                            onClick={() => handleRejectIssue(issue.id)}
+                            className="btn-cut bg-secondary text-white px-4 py-2 font-mono text-xs font-bold"
+                          >
+                            ODRZUĆ
+                          </button>
+                        </div>
+                      )}
+                    </Card>
                   ))}
                 </div>
               )}
@@ -414,7 +547,7 @@ export default function AdminPanel() {
               </div>
 
               {showCreateBadge && (
-                <div className="glass-panel p-4 space-y-3">
+                <Card className="space-y-3">
                   <h3 className="font-header text-sm text-primary uppercase tracking-wider">
                     NOWE OSIĄGNIĘCIE
                   </h3>
@@ -477,10 +610,10 @@ export default function AdminPanel() {
                   >
                     UTWÓRZ
                   </button>
-                </div>
+                </Card>
               )}
 
-              <div className="glass-panel p-4">
+              <Card>
                 <div className="space-y-2 max-h-[600px] overflow-y-auto">
                   {!badges || badges.length === 0 ? (
                     <div className="font-mono text-sm text-text-secondary text-center py-4">
@@ -488,9 +621,10 @@ export default function AdminPanel() {
                     </div>
                   ) : (
                     badges.map((badge) => (
-                      <div
+                      <Card
                         key={badge.id}
-                        className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-sm hover:border-primary/50 transition-all"
+                        padding="p-4"
+                        className="flex items-center gap-3"
                       >
                         <div
                           className="flex items-center justify-center"
@@ -527,11 +661,11 @@ export default function AdminPanel() {
                         >
                           NADAJ
                         </button>
-                      </div>
+                      </Card>
                     ))
                   )}
                 </div>
-              </div>
+              </Card>
 
               {showAwardModal && selectedBadge && (
                 <motion.div
@@ -540,10 +674,12 @@ export default function AdminPanel() {
                   className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
                   onClick={() => setShowAwardModal(false)}
                 >
-                  <motion.div
+                  <Card
+                    as={motion.div}
                     initial={{ scale: 0.9 }}
                     animate={{ scale: 1 }}
-                    className="glass-panel p-6 max-w-md w-full mx-4"
+                    padding="p-6"
+                    className="max-w-md w-full mx-4"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <h3 className="font-header text-sm text-primary uppercase tracking-wider mb-4">
@@ -554,7 +690,7 @@ export default function AdminPanel() {
                         <div className="font-mono text-xs text-text-secondary mb-2">
                           OSIĄGNIĘCIE:
                         </div>
-                        <div className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-sm">
+                        <Card padding="p-4" className="flex items-center gap-3">
                           <div
                             className="text-2xl"
                             style={{ color: selectedBadge.color || "#ffffff" }}
@@ -571,7 +707,7 @@ export default function AdminPanel() {
                               </div>
                             )}
                           </div>
-                        </div>
+                        </Card>
                       </div>
                       <div>
                         <div className="font-mono text-xs text-text-secondary mb-2">
@@ -614,7 +750,7 @@ export default function AdminPanel() {
                         </button>
                       </div>
                     </div>
-                  </motion.div>
+                  </Card>
                 </motion.div>
               )}
             </motion.div>
@@ -626,7 +762,7 @@ export default function AdminPanel() {
               animate={{ opacity: 1 }}
               className="space-y-4"
             >
-              <div className="glass-panel p-4">
+              <Card>
                 <div className="flex items-center gap-2 mb-4">
                   <BarChart3 size={18} className="text-primary" />
                   <h2 className="font-header text-sm text-primary uppercase tracking-wider">
@@ -634,51 +770,51 @@ export default function AdminPanel() {
                   </h2>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                  <Card padding="p-4">
                     <div className="font-mono text-[10px] text-text-secondary mb-1">
                       UŻYTKOWNICY
                     </div>
                     <div className="font-mono text-lg text-primary">
                       {radioInfo.statistics.total_users}
                     </div>
-                  </div>
-                  <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                  </Card>
+                  <Card padding="p-4">
                     <div className="font-mono text-[10px] text-text-secondary mb-1">
                       GŁOSY
                     </div>
                     <div className="font-mono text-lg text-primary">
                       {radioInfo.statistics.total_votes}
                     </div>
-                  </div>
-                  <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                  </Card>
+                  <Card padding="p-4">
                     <div className="font-mono text-[10px] text-text-secondary mb-1">
                       PROPOZYCJE
                     </div>
                     <div className="font-mono text-lg text-primary">
                       {radioInfo.statistics.total_suggestions}
                     </div>
-                  </div>
-                  <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                  </Card>
+                  <Card padding="p-4">
                     <div className="font-mono text-[10px] text-text-secondary mb-1">
                       POLUBIENIA
                     </div>
                     <div className="font-mono text-lg text-accent-cyan">
                       {radioInfo.statistics.total_likes}
                     </div>
-                  </div>
-                  <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                  </Card>
+                  <Card padding="p-4">
                     <div className="font-mono text-[10px] text-text-secondary mb-1">
                       NIE POLUBIENIA
                     </div>
                     <div className="font-mono text-lg text-accent-magenta">
                       {radioInfo.statistics.total_dislikes}
                     </div>
-                  </div>
+                  </Card>
                 </div>
-              </div>
+              </Card>
 
               {radioInfo.statistics.active_listeners && (
-                <div className="glass-panel p-4">
+                <Card>
                   <div className="flex items-center gap-2 mb-4">
                     <Users size={18} className="text-primary" />
                     <h2 className="font-header text-sm text-primary uppercase tracking-wider">
@@ -686,7 +822,7 @@ export default function AdminPanel() {
                     </h2>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                    <Card padding="p-4">
                       <div className="font-mono text-[10px] text-text-secondary mb-1">
                         NA STRONIE
                       </div>
@@ -701,8 +837,8 @@ export default function AdminPanel() {
                         Goście:{" "}
                         {radioInfo.statistics.active_listeners.guests.active}
                       </div>
-                    </div>
-                    <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                    </Card>
+                    <Card padding="p-4">
                       <div className="font-mono text-[10px] text-text-secondary mb-1">
                         ODTWARZAJĄ
                       </div>
@@ -717,13 +853,13 @@ export default function AdminPanel() {
                         Goście:{" "}
                         {radioInfo.statistics.active_listeners.guests.playing}
                       </div>
-                    </div>
+                    </Card>
                   </div>
-                </div>
+                </Card>
               )}
 
               {radioInfo.station && (
-                <div className="glass-panel p-4">
+                <Card>
                   <h2 className="font-header text-sm text-primary uppercase tracking-wider mb-4">
                     INFORMACJE O STACJI
                   </h2>
@@ -753,11 +889,11 @@ export default function AdminPanel() {
                       </span>
                     </div>
                   </div>
-                </div>
+                </Card>
               )}
 
               {radioInfo.now_playing && (
-                <div className="glass-panel p-4">
+                <Card>
                   <h2 className="font-header text-sm text-primary uppercase tracking-wider mb-4">
                     TERAZ GRANE
                   </h2>
@@ -769,7 +905,7 @@ export default function AdminPanel() {
                       {radioInfo.now_playing.artist || "Unknown"}
                     </div>
                   </div>
-                </div>
+                </Card>
               )}
             </motion.div>
           )}

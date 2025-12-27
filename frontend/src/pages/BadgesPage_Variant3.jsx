@@ -127,7 +127,7 @@ export default function BadgesPage() {
           subtitle="Wszystkie dostępne osiągnięcia"
           icon={Award}
         />
-        <div className="glass-panel p-6">
+        <Card padding="p-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((idx) => (
               <motion.div
@@ -139,7 +139,7 @@ export default function BadgesPage() {
               />
             ))}
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -155,7 +155,7 @@ export default function BadgesPage() {
         icon={Award}
       />
 
-      <div className="glass-panel p-6">
+      <Card padding="p-6">
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/20 rounded-sm border border-primary/30">

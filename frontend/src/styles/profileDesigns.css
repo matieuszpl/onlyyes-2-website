@@ -1,0 +1,45 @@
+/* Minimal Design - Clean, spacious, subtle */
+[data-profile-design="1"] .profile-header-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 2.5rem;
+}
+[data-profile-design="1"] .profile-tab-button {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 1rem 2rem;
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  transition: all 0.3s ease;
+  color: rgba(255,255,255,0.4);
+}
+[data-profile-design="1"] .profile-tab-button:hover {
+  color: rgba(255,255,255,0.7);
+}
+[data-profile-design="1"] .profile-tab-button.active {
+  border-bottom-color: currentColor;
+  font-weight: 500;
+  color: var(--primary);
+}
+[data-profile-design="1"] .profile-stat-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  padding: 2rem;
+  text-align: center;
+}
+[data-profile-design="1"] .profile-section-title {
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  font-weight: 400;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  color: rgba(255,255,255,0.4);
+}
+[data-profile-design="1"] .profile-history-item {
+  background: transparent;
+  border: none;
+  border-left: 2px solid rgba(255,255,255,0.1);
+  padding: 1.5rem 0 1.5rem 1.5rem;
+  margin-left: 1rem;
+}

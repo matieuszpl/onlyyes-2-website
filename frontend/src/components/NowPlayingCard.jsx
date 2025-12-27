@@ -27,10 +27,11 @@ export default function NowPlayingCard() {
   }, [nowPlaying]);
 
   return (
-    <motion.div
+    <Card
+      as={motion.div}
       initial={{ scale: 0.95 }}
       animate={{ scale: 1 }}
-      className="glass-panel p-4 relative overflow-hidden"
+      className="relative overflow-hidden"
     >
       {nowPlaying.thumbnail && !colors.isDefault ? (
         <div
@@ -114,7 +115,7 @@ export default function NowPlayingCard() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </Card>
   );
 }
 

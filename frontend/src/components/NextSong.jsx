@@ -5,6 +5,7 @@ import TextGlitch from "./TextGlitch";
 import ImageGlitch from "./ImageGlitch";
 import { useRadioEvents } from "../contexts/RadioEventsContext";
 import { useAlbumColors } from "../hooks/useAlbumColors";
+import Card from "./Card";
 
 const DEFAULT_ALBUM_ART =
   "https://azura.onlyyes.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
@@ -39,11 +40,11 @@ export default function NextSong() {
 
   if (loading) {
     return (
-      <div className="glass-panel p-4 space-y-2">
+      <Card className="space-y-2">
         <h3 className="font-header text-sm text-primary uppercase tracking-wider">
           NASTĘPNY UTWÓR
         </h3>
-        <div className="flex items-center gap-2 p-2 bg-white/5 border border-white/10 rounded-sm">
+        <Card padding="p-2" className="flex items-center gap-2">
           <motion.div
             animate={{ opacity: [0.3, 0.6, 0.3] }}
             transition={{
@@ -78,29 +79,29 @@ export default function NextSong() {
             <Loader2 size={14} className="text-primary/50" />
           </motion.div>
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (!nextSong) {
     return (
-      <div className="glass-panel p-4">
+      <Card>
         <h3 className="font-header text-sm text-primary uppercase tracking-wider mb-2">
           NASTĘPNY UTWÓR
         </h3>
         <div className="font-mono text-[10px] text-text-secondary">
           BRAK INFORMACJI
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="glass-panel p-4 space-y-2">
+    <Card className="space-y-2">
       <h3 className="font-header text-sm text-primary uppercase tracking-wider">
         NASTĘPNY UTWÓR
       </h3>
-      <div className="flex items-center gap-2 p-2 bg-white/5 border border-white/10 hover:border-primary/50 transition-all rounded-sm relative overflow-hidden">
+      <Card padding="p-2" className="flex items-center gap-2 relative overflow-hidden">
         {nextSong.thumbnail && !colors.isDefault ? (
           <div
             className="absolute inset-0 opacity-[0.42] blur-[80px] scale-150 -z-10"
@@ -171,7 +172,7 @@ export default function NextSong() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </Card>
+    </Card>
   );
 }

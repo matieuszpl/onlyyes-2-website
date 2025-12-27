@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, TrendingUp, Award, Star } from "lucide-react";
 import api from "../api";
 import { getIconComponent } from "../utils/badgeIcons";
+import Card from "./Card";
 
 export default function UserTooltip({
   userId,
@@ -22,9 +23,25 @@ export default function UserTooltip({
   const updatePosition = () => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const tooltipWidth = 280;
+      
+      let left = rect.left + rect.width / 2;
+      let top = rect.top - 8;
+      
+      if (left - tooltipWidth / 2 < 8) {
+        left = tooltipWidth / 2 + 8;
+      } else if (left + tooltipWidth / 2 > viewportWidth - 8) {
+        left = viewportWidth - tooltipWidth / 2 - 8;
+      }
+      
+      if (top < 8) {
+        top = rect.bottom + 12;
+      }
+      
       setPosition({
-        top: rect.top + window.scrollY - 8,
-        left: rect.left + window.scrollX + rect.width / 2,
+        top,
+        left,
       });
     }
   };
@@ -51,11 +68,12 @@ export default function UserTooltip({
 
     const handleScroll = () => {
       if (show) {
-        updatePosition();
+        requestAnimationFrame(updatePosition);
       }
     };
 
     if (show) {
+      updatePosition();
       document.addEventListener("mousedown", handleClickOutside);
       window.addEventListener("scroll", handleScroll, true);
       window.addEventListener("resize", updatePosition);
@@ -122,14 +140,23 @@ export default function UserTooltip({
             top: `${position.top}px`,
             left: `${position.left}px`,
             transform: "translate(-50%, -100%)",
-            marginBottom: "12px",
             minWidth: "280px",
             maxWidth: "320px",
           }}
           onMouseEnter={() => setShow(true)}
           onMouseLeave={handleMouseLeave}
         >
-          <div className="glass-panel border border-primary/30 shadow-2xl overflow-hidden">
+          <Card 
+            className="border shadow-2xl overflow-hidden relative"
+            style={{
+              borderColor: userData?.featured_badge?.color 
+                ? `${userData.featured_badge.color}60` 
+                : "rgba(255, 255, 255, 0.1)",
+              background: userData?.featured_badge?.color
+                ? `linear-gradient(135deg, ${userData.featured_badge.color}25 0%, ${userData.featured_badge.color}10 50%, transparent 100%), rgb(18, 18, 18)`
+                : "linear-gradient(135deg, rgba(0, 243, 255, 0.15) 0%, rgba(0, 243, 255, 0.05) 50%, transparent 100%), rgb(18, 18, 18)",
+            }}
+          >
             {loading ? (
               <div className="p-4 space-y-3">
                 <div className="flex items-center gap-3">
@@ -143,23 +170,16 @@ export default function UserTooltip({
               </div>
             ) : userData ? (
               <div className="relative">
-                {/* Header with avatar and gradient */}
-                <div
-                  className="relative p-4 pb-6"
-                  style={{
-                    background: userData.featured_badge?.color
-                      ? `linear-gradient(135deg, ${userData.featured_badge.color}15 0%, transparent 100%)`
-                      : "linear-gradient(135deg, rgba(0, 243, 255, 0.1) 0%, transparent 100%)",
-                  }}
-                >
+                {/* Header with avatar */}
+                <div className="relative p-4 space-y-3">
                   <div className="flex items-start gap-3">
                     {/* Avatar */}
-                    <div className="relative flex-shrink-0">
+                    <div className="relative shrink-0">
                       {userData.avatar_url ? (
                         <img
                           src={userData.avatar_url}
                           alt={userData.username}
-                          className="w-16 h-16 border-2 rounded-full object-cover shadow-lg"
+                          className="w-12 h-12 border-2 rounded-full object-cover shadow-lg"
                           style={{
                             borderColor:
                               userData.featured_badge?.color ||
@@ -168,20 +188,20 @@ export default function UserTooltip({
                         />
                       ) : (
                         <div
-                          className="w-16 h-16 border-2 rounded-full bg-white/5 flex items-center justify-center shadow-lg"
+                          className="w-12 h-12 border-2 rounded-full bg-white/5 flex items-center justify-center shadow-lg"
                           style={{
                             borderColor:
                               userData.featured_badge?.color ||
                               "var(--primary)",
                           }}
                         >
-                          <UserPlus size={24} className="text-text-secondary" />
+                          <UserPlus size={18} className="text-text-secondary" />
                         </div>
                       )}
                       {/* Featured badge indicator */}
                       {userData.featured_badge && (
                         <div
-                          className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-white/20 flex items-center justify-center shadow-lg"
+                          className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white/20 flex items-center justify-center shadow-lg"
                           style={{
                             backgroundColor:
                               userData.featured_badge.color || "var(--primary)",
@@ -193,7 +213,7 @@ export default function UserTooltip({
                             );
                             return (
                               <IconComponent
-                                size={12}
+                                size={10}
                                 className="text-black"
                                 strokeWidth={2.5}
                               />
@@ -205,12 +225,28 @@ export default function UserTooltip({
 
                     {/* User info */}
                     <div className="flex-1 min-w-0 pt-1">
-                      <div className="font-header text-base text-primary font-bold truncate mb-1">
+                      <div 
+                        className="font-header text-base font-bold truncate mb-1"
+                        style={{
+                          color: userData.featured_badge?.color || "var(--primary)",
+                        }}
+                      >
                         {userData.username}
                       </div>
                       {userData.rank && (
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="font-mono text-xs text-primary bg-primary/20 px-2 py-0.5 rounded border border-primary/30">
+                          <div 
+                            className="font-mono text-xs px-2 py-0.5 rounded border"
+                            style={{
+                              color: userData.featured_badge?.color || "var(--primary)",
+                              backgroundColor: userData.featured_badge?.color 
+                                ? `${userData.featured_badge.color}20` 
+                                : "rgba(0, 243, 255, 0.2)",
+                              borderColor: userData.featured_badge?.color 
+                                ? `${userData.featured_badge.color}50` 
+                                : "rgba(0, 243, 255, 0.3)",
+                            }}
+                          >
                             {userData.rank.name}
                           </div>
                         </div>
@@ -254,8 +290,18 @@ export default function UserTooltip({
                   <div className="px-4 pb-3 border-b border-white/10">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-1.5">
-                        <TrendingUp size={12} className="text-accent-cyan" />
-                        <span className="font-mono text-xs text-accent-cyan font-bold">
+                        <TrendingUp 
+                          size={12} 
+                          style={{
+                            color: userData.featured_badge?.color || "var(--accent-cyan)",
+                          }}
+                        />
+                        <span 
+                          className="font-mono text-xs font-bold"
+                          style={{
+                            color: userData.featured_badge?.color || "var(--accent-cyan)",
+                          }}
+                        >
                           {userData.xp} XP
                         </span>
                       </div>
@@ -273,8 +319,7 @@ export default function UserTooltip({
                         transition={{ duration: 0.8, delay: 0.2 }}
                         className="h-full rounded-full"
                         style={{
-                          background:
-                            "linear-gradient(to right, var(--primary), var(--accent-cyan))",
+                          backgroundColor: userData.featured_badge?.color || "var(--primary)",
                         }}
                       />
                     </div>
@@ -284,36 +329,72 @@ export default function UserTooltip({
                 {/* Statistics */}
                 <div className="p-4">
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="text-center p-2 bg-white/5 rounded border border-white/10 hover:border-primary/30 transition-colors">
+                    <div 
+                      className="text-center p-2 bg-white/5 rounded border border-white/10 transition-colors"
+                      style={{
+                        borderColor: userData.featured_badge?.color 
+                          ? `${userData.featured_badge.color}30` 
+                          : "rgba(255, 255, 255, 0.1)",
+                      }}
+                    >
                       <div className="flex items-center justify-center gap-1 mb-1">
                         <Award size={10} className="text-text-secondary" />
                         <div className="font-mono text-[9px] text-text-secondary uppercase">
                           REP
                         </div>
                       </div>
-                      <div className="font-header text-lg text-primary font-bold">
+                      <div 
+                        className="font-header text-lg font-bold"
+                        style={{
+                          color: userData.featured_badge?.color || "var(--primary)",
+                        }}
+                      >
                         {userData.reputation_score}
                       </div>
                     </div>
-                    <div className="text-center p-2 bg-white/5 rounded border border-white/10 hover:border-primary/30 transition-colors">
+                    <div 
+                      className="text-center p-2 bg-white/5 rounded border border-white/10 transition-colors"
+                      style={{
+                        borderColor: userData.featured_badge?.color 
+                          ? `${userData.featured_badge.color}30` 
+                          : "rgba(255, 255, 255, 0.1)",
+                      }}
+                    >
                       <div className="flex items-center justify-center gap-1 mb-1">
                         <Star size={10} className="text-text-secondary" />
                         <div className="font-mono text-[9px] text-text-secondary uppercase">
                           GŁOSY
                         </div>
                       </div>
-                      <div className="font-header text-lg text-primary font-bold">
+                      <div 
+                        className="font-header text-lg font-bold"
+                        style={{
+                          color: userData.featured_badge?.color || "var(--primary)",
+                        }}
+                      >
                         {userData.votes_count}
                       </div>
                     </div>
-                    <div className="text-center p-2 bg-white/5 rounded border border-white/10 hover:border-primary/30 transition-colors">
+                    <div 
+                      className="text-center p-2 bg-white/5 rounded border border-white/10 transition-colors"
+                      style={{
+                        borderColor: userData.featured_badge?.color 
+                          ? `${userData.featured_badge.color}30` 
+                          : "rgba(255, 255, 255, 0.1)",
+                      }}
+                    >
                       <div className="flex items-center justify-center gap-1 mb-1">
                         <TrendingUp size={10} className="text-text-secondary" />
                         <div className="font-mono text-[9px] text-text-secondary uppercase">
                           PROP
                         </div>
                       </div>
-                      <div className="font-header text-lg text-primary font-bold">
+                      <div 
+                        className="font-header text-lg font-bold"
+                        style={{
+                          color: userData.featured_badge?.color || "var(--primary)",
+                        }}
+                      >
                         {userData.suggestions_count}
                       </div>
                     </div>
@@ -327,14 +408,16 @@ export default function UserTooltip({
                 </div>
               </div>
             )}
-          </div>
+          </Card>
           {/* Arrow pointer */}
           <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
             <div
               className="w-3 h-3 border-r border-b rotate-45"
               style={{
                 backgroundColor: "var(--bg-panel)",
-                borderColor: "rgba(0, 243, 255, 0.3)",
+                borderColor: userData?.featured_badge?.color 
+                  ? `${userData.featured_badge.color}60` 
+                  : "rgba(0, 243, 255, 0.3)",
               }}
             />
           </div>

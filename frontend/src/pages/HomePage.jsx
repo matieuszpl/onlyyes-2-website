@@ -86,7 +86,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <TopCharts limit={10} />
+                <TopCharts limit={5} />
               </motion.div>
               <motion.div
                 key={`worst-charts-${animKey}`}
@@ -94,7 +94,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <WorstChartsPreview limit={10} />
+                <WorstChartsPreview limit={5} />
               </motion.div>
             </div>
           </div>

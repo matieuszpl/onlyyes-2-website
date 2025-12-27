@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Clock } from "lucide-react";
+import Card from "./Card";
 
 export default function TimeDisplay() {
   const [time, setTime] = useState(new Date());
@@ -28,7 +29,7 @@ export default function TimeDisplay() {
   };
 
   return (
-    <div className="glass-panel p-4 relative">
+    <Card className="relative">
 
       <div className="flex items-center gap-3">
         <Clock size={20} className="text-primary" />
@@ -41,7 +42,7 @@ export default function TimeDisplay() {
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 

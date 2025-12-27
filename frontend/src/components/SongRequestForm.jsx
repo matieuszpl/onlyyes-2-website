@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useUser } from "../contexts/UserContext";
 import api from "../api";
+import Card from "./Card";
 
 export default function SongRequestForm() {
   const { user } = useUser();
@@ -11,11 +12,11 @@ export default function SongRequestForm() {
 
   if (!user) {
     return (
-      <div className="glass-panel p-4 relative">
+      <Card className="relative">
         <p className="font-mono text-sm text-text-secondary">
           ZALOGUJ SIĘ, ABY PROPONOWAĆ UTWORY
         </p>
-      </div>
+      </Card>
     );
   }
 
@@ -58,7 +59,7 @@ export default function SongRequestForm() {
   };
 
   return (
-    <div className="glass-panel p-4 space-y-3 relative">
+    <Card className="space-y-3 relative">
 
       <h3 className="font-header text-base text-primary uppercase tracking-wider">
         PROPONUJ UTWÓR
@@ -82,7 +83,7 @@ export default function SongRequestForm() {
       </div>
 
       {preview && (
-        <div className="bg-white/5 border border-white/10 p-4 space-y-2">
+        <Card className="space-y-2">
           <div className="flex items-center gap-4">
             {preview.thumbnail && (
               <img
@@ -112,8 +113,8 @@ export default function SongRequestForm() {
           >
             {submitting ? "WYSYŁANIE..." : "WYŚLIJ PROPOZYCJĘ"}
           </button>
-        </div>
+        </Card>
       )}
-    </div>
+    </Card>
   );
 }

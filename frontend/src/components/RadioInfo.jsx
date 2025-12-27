@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../api";
+import Card from "./Card";
 
 export default function RadioInfo() {
   const [info, setInfo] = useState(null);
@@ -20,7 +21,7 @@ export default function RadioInfo() {
   }, []);
 
   return (
-    <div className="glass-panel p-4 space-y-3">
+    <Card className="space-y-3">
       <h3 className="font-header text-sm text-primary uppercase tracking-wider">
         INFORMACJE O STACJI
       </h3>
@@ -34,6 +35,6 @@ export default function RadioInfo() {
           Słuchaj najlepszej muzyki, głosuj na ulubione utwory i proponuj nowe!
         </p>
       </div>
-    </div>
+    </Card>
   );
 }

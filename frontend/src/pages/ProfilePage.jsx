@@ -1,37 +1,81 @@
-import { useState } from "react";
 import { useUser } from "../contexts/UserContext";
-import PageHeader from "../components/layout/PageHeader";
+import { Award, History, Activity } from "lucide-react";
+import TextGlitch from "../components/TextGlitch";
 import ProfileHeader from "../components/profile/ProfileHeader";
 import ProfileOverview from "../components/profile/ProfileOverview";
-import ProfileBadges from "../components/profile/ProfileBadges";
 import XpHistory from "../components/profile/XpHistory";
 import ActivityHistory from "../components/profile/ActivityHistory";
+import Card from "../components/Card";
+import "../styles/profileDesigns.css";
 
 export default function ProfilePage() {
   const { user } = useUser();
-  const [activeTab, setActiveTab] = useState("overview");
 
   if (!user) {
     return (
       <div className="space-y-6">
-        <div className="glass-panel p-4">
+        <Card>
           <p className="font-mono text-sm text-text-secondary">
             ZALOGUJ SIĘ, ABY ZOBACZYĆ PROFIL
           </p>
-        </div>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader subtitle="Twoja aktywność i statystyki" />
-      <ProfileHeader activeTab={activeTab} onTabChange={setActiveTab} />
-      
-      {activeTab === "overview" && <ProfileOverview />}
-      {activeTab === "badges" && <ProfileBadges />}
-      {activeTab === "xp-history" && <XpHistory />}
-      {activeTab === "activity" && <ActivityHistory />}
+    <div className="space-y-8" data-profile-design="1">
+      <div className="flex flex-col items-center justify-center mb-6">
+        <div className="font-brand text-3xl md:text-4xl text-primary tracking-wider">
+          <TextGlitch
+            text="ONLY YES"
+            altTexts={[
+              "ONLY YES",
+              "0NLY Y3S",
+              "0NL¥ ¥3$",
+              "0N1Y Y35",
+              "#+:|* {&><@$?",
+            ]}
+            className="font-brand"
+          />
+        </div>
+      </div>
+
+      <ProfileHeader />
+
+      <div className="space-y-8">
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <Award size={20} className="text-primary" />
+            <h2 className="font-header text-lg text-primary uppercase tracking-wider">
+              OSIĄGNIĘCIA
+            </h2>
+          </div>
+          <ProfileOverview />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <History size={20} className="text-primary" />
+              <h2 className="font-header text-lg text-primary uppercase tracking-wider">
+                HISTORIA XP
+              </h2>
+            </div>
+            <XpHistory />
+          </div>
+
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <Activity size={20} className="text-primary" />
+              <h2 className="font-header text-lg text-primary uppercase tracking-wider">
+                HISTORIA AKTYWNOŚCI
+              </h2>
+            </div>
+            <ActivityHistory />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

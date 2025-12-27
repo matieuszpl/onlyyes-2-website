@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Loader2, AlertTriangle } from "lucide-react";
 import api from "../api";
+import Card from "./Card";
 
 export default function WorstCharts() {
   const [charts, setCharts] = useState([]);
@@ -24,7 +25,7 @@ export default function WorstCharts() {
   };
 
   return (
-    <div className="glass-panel p-4 space-y-3 relative">
+    <Card className="space-y-3 relative">
       <div className="flex justify-between items-center">
         <h3 className="font-header text-base text-primary uppercase tracking-wider">
           NAJGORSZE UTWORY
@@ -48,7 +49,8 @@ export default function WorstCharts() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: idx * 0.05 }}
-              className="flex items-center gap-4 p-3 bg-white/5 border border-white/10"
+              as={motion.div}
+              className="flex items-center gap-4"
             >
               <motion.div
                 animate={{ opacity: [0.3, 0.6, 0.3] }}
@@ -115,7 +117,8 @@ export default function WorstCharts() {
           {charts.map((chart) => (
             <div
               key={chart.position}
-              className="flex items-center gap-4 p-3 bg-white/5 border border-white/10 hover:border-red-500/50 transition-all"
+              as={motion.div}
+              className="flex items-center gap-4"
             >
               <div className="w-12 text-center font-mono text-xl font-bold text-red-500">
                 #{chart.position}
@@ -141,6 +144,6 @@ export default function WorstCharts() {
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

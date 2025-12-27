@@ -8,7 +8,7 @@ from starlette.responses import RedirectResponse, StreamingResponse, JSONRespons
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from datetime import datetime, timedelta, timezone
 import httpx
 import asyncio
@@ -273,10 +273,10 @@ async def initialize_default_badges(conn):
         {
             "name": "Współtwórca Playlisty",
             "description": "Za pomoc w tworzeniu playlisty radia (proponowanie piosenek)",
-            "icon": "🎵",
-            "color": "#805ad5",
+            "icon": "👑",
+            "color": "#ffd700",
             "auto_award_type": "PLAYLIST_CONTRIBUTOR",
-            "xp_reward": 75
+            "xp_reward": 5000
         },
         {
             "name": "Słuchacz",
@@ -394,6 +394,60 @@ async def initialize_default_badges(conn):
             "auto_award_config": '{"count": 100}',
             "xp_reward": 1000
         },
+        {
+            "name": "Łowca Błędów",
+            "description": "Za zgłoszenie 1 zaakceptowanego błędu",
+            "icon": "🐛",
+            "color": "#cd7f32",
+            "auto_award_type": "BUG_REPORTS",
+            "auto_award_config": '{"count": 1}',
+            "xp_reward": 50
+        },
+        {
+            "name": "Ekspert Debugowania",
+            "description": "Za zgłoszenie 10 zaakceptowanych błędów",
+            "icon": "🔍",
+            "color": "#c0c0c0",
+            "auto_award_type": "BUG_REPORTS",
+            "auto_award_config": '{"count": 10}',
+            "xp_reward": 500
+        },
+        {
+            "name": "Mistrz Jakości",
+            "description": "Za zgłoszenie 100 zaakceptowanych błędów",
+            "icon": "🏆",
+            "color": "#ffd700",
+            "auto_award_type": "BUG_REPORTS",
+            "auto_award_config": '{"count": 100}',
+            "xp_reward": 2000
+        },
+        {
+            "name": "Pomysłodawca",
+            "description": "Za zgłoszenie 1 zaakceptowanego pomysłu",
+            "icon": "💭",
+            "color": "#cd7f32",
+            "auto_award_type": "FEATURE_REQUESTS",
+            "auto_award_config": '{"count": 1}',
+            "xp_reward": 75
+        },
+        {
+            "name": "Wizjoner",
+            "description": "Za zgłoszenie 10 zaakceptowanych pomysłów",
+            "icon": "✨",
+            "color": "#c0c0c0",
+            "auto_award_type": "FEATURE_REQUESTS",
+            "auto_award_config": '{"count": 10}',
+            "xp_reward": 750
+        },
+        {
+            "name": "Architekt Funkcjonalności",
+            "description": "Za zgłoszenie 100 zaakceptowanych pomysłów",
+            "icon": "🎯",
+            "color": "#ffd700",
+            "auto_award_type": "FEATURE_REQUESTS",
+            "auto_award_config": '{"count": 100}',
+            "xp_reward": 3000
+        },
     ]
     
     for badge_data in default_badges:
@@ -420,6 +474,26 @@ async def initialize_default_badges(conn):
                 }
             )
             logger.info(f"Created default badge: {badge_data['name']}")
+        else:
+            await conn.execute(
+                text("""
+                    UPDATE badges 
+                    SET description = :description, icon = :icon, color = :color, 
+                        auto_award_type = :auto_award_type, auto_award_config = :auto_award_config, 
+                        xp_reward = :xp_reward
+                    WHERE name = :name
+                """),
+                {
+                    "name": badge_data["name"],
+                    "description": badge_data["description"],
+                    "icon": badge_data["icon"],
+                    "color": badge_data["color"],
+                    "auto_award_type": badge_data["auto_award_type"],
+                    "auto_award_config": badge_data.get("auto_award_config"),
+                    "xp_reward": badge_data["xp_reward"]
+                }
+            )
+            logger.info(f"Updated default badge: {badge_data['name']}")
 
 app = FastAPI(title="ONLY YES Radio API", lifespan=lifespan)
 
@@ -502,6 +576,19 @@ async def read_users_me(request: Request, db: AsyncSession = Depends(get_db)):
     if user:
         xp = user.xp or 0
         rank_info = get_rank(xp)
+        
+        featured_badge = None
+        if user.featured_badge_id:
+            badge = await db.get(models.Badge, user.featured_badge_id)
+            if badge:
+                featured_badge = {
+                    "id": badge.id,
+                    "name": badge.name,
+                    "description": badge.description,
+                    "icon": badge.icon,
+                    "color": badge.color
+                }
+        
         return {
             "is_logged_in": True,
             "username": user.username,
@@ -509,7 +596,8 @@ async def read_users_me(request: Request, db: AsyncSession = Depends(get_db)):
             "is_admin": user.is_admin,
             "reputation_score": user.reputation_score,
             "xp": xp,
-            "rank": rank_info
+            "rank": rank_info,
+            "featured_badge": featured_badge
         }
     return {"is_logged_in": False}
 
@@ -598,11 +686,19 @@ async def get_schedules_debug():
     """Debug endpoint - zwraca surowe dane z AzuraCast"""
     try:
         import httpx
+        from datetime import datetime, timedelta, timezone
+        
         base_url = config.settings.azuracast_url.rstrip("/")
         station_id = config.settings.azuracast_station_id
         api_key = config.settings.azuracast_api_key
         
-        url = f"{base_url}/api/station/{station_id}/schedule"
+        # Oblicz poniedziałek 00:00 obecnego tygodnia
+        now = datetime.now(timezone.utc)
+        days_since_monday = now.weekday()
+        monday = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+        monday_iso = monday.isoformat().replace('+00:00', 'Z')
+        
+        url = f"{base_url}/api/station/{station_id}/schedule?now={monday_iso}&rows=100"
         headers = {"Accept": "application/json"}
         if api_key:
             headers["X-API-Key"] = api_key
@@ -614,8 +710,11 @@ async def get_schedules_debug():
             
             return {
                 "url": url,
+                "monday_iso": monday_iso,
                 "raw_response": raw_data,
-                "first_item_details": raw_data[0] if isinstance(raw_data, list) and len(raw_data) > 0 else None
+                "raw_response_count": len(raw_data) if isinstance(raw_data, list) else 0,
+                "first_item_details": raw_data[0] if isinstance(raw_data, list) and len(raw_data) > 0 else None,
+                "sample_items": raw_data[:5] if isinstance(raw_data, list) and len(raw_data) > 0 else []
             }
     except Exception as e:
         logger.error(f"Debug schedule error: {e}", exc_info=True)
@@ -1186,6 +1285,7 @@ async def get_user_history(request: Request, db: AsyncSession = Depends(get_db))
             "type": "vote",
             "title": song_info.get("title", f"Song {v.song_id}") if song_info else f"Song {v.song_id}",
             "artist": song_info.get("artist", "Unknown") if song_info else "Unknown",
+            "thumbnail": song_info.get("thumbnail") if song_info else None,
             "vote_type": v.vote_type,
             "created_at": v.created_at.isoformat()
         })
@@ -1431,6 +1531,17 @@ async def get_activity(limit: int = 20, db: AsyncSession = Depends(get_db)):
         )
         
         for vote, user in votes_result.all():
+            featured_badge = None
+            if user.featured_badge_id:
+                badge = await db.get(models.Badge, user.featured_badge_id)
+                if badge:
+                    featured_badge = {
+                        "id": badge.id,
+                        "name": badge.name,
+                        "description": badge.description,
+                        "icon": badge.icon,
+                        "color": badge.color
+                    }
             activities.append({
                 "type": "vote",
                 "text": f"{user.username} {'polubił utwór' if vote.vote_type == 'LIKE' else 'nie polubił utworu'} ",
@@ -1439,7 +1550,8 @@ async def get_activity(limit: int = 20, db: AsyncSession = Depends(get_db)):
                 "user_id": user.id,
                 "username": user.username,
                 "avatar_url": user.avatar_url,
-                "vote_type": vote.vote_type
+                "vote_type": vote.vote_type,
+                "featured_badge": featured_badge
             })
         
         # Ostatnie propozycje
@@ -1451,6 +1563,17 @@ async def get_activity(limit: int = 20, db: AsyncSession = Depends(get_db)):
         )
         
         for suggestion, user in suggestions_result.all():
+            featured_badge = None
+            if user.featured_badge_id:
+                badge = await db.get(models.Badge, user.featured_badge_id)
+                if badge:
+                    featured_badge = {
+                        "id": badge.id,
+                        "name": badge.name,
+                        "description": badge.description,
+                        "icon": badge.icon,
+                        "color": badge.color
+                    }
             activities.append({
                 "type": "suggestion",
                 "text": f"{user.username} zaproponował utwór",
@@ -1458,7 +1581,8 @@ async def get_activity(limit: int = 20, db: AsyncSession = Depends(get_db)):
                 "icon": "music",
                 "user_id": user.id,
                 "username": user.username,
-                "avatar_url": user.avatar_url
+                "avatar_url": user.avatar_url,
+                "featured_badge": featured_badge
             })
         
         # Sortuj po czasie i zwróć najnowsze
@@ -1722,6 +1846,30 @@ async def _check_and_award_badges_internal(user_id: int, badge_type: str, db: As
             if suggestions_count and suggestions_count >= required_count:
                 should_award = True
         
+        elif badge_type == "BUG_REPORTS":
+            required_count = config_data.get("count", 0)
+            bugs_count = await db.scalar(
+                select(func.count(models.IssueReport.id)).where(
+                    models.IssueReport.user_id == user_id,
+                    models.IssueReport.issue_type == "BUG",
+                    models.IssueReport.status == "APPROVED"
+                )
+            )
+            if bugs_count and bugs_count >= required_count:
+                should_award = True
+        
+        elif badge_type == "FEATURE_REQUESTS":
+            required_count = config_data.get("count", 0)
+            features_count = await db.scalar(
+                select(func.count(models.IssueReport.id)).where(
+                    models.IssueReport.user_id == user_id,
+                    models.IssueReport.issue_type == "FEATURE",
+                    models.IssueReport.status == "APPROVED"
+                )
+            )
+            if features_count and features_count >= required_count:
+                should_award = True
+        
         if should_award:
             user_badge = models.UserBadge(
                 user_id=user_id,
@@ -1968,3 +2116,175 @@ async def report_error(report_req: ReportErrorRequest, request: Request, db: Asy
     await _check_and_award_badges_internal(user.id, "PLAYLIST_GUARDIAN", db)
     
     return {"status": "success", "message": "Błąd zgłoszony"}
+
+def get_client_ip(request: Request) -> str:
+    """Pobiera IP klienta z requestu"""
+    if request.client:
+        return request.client.host
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return "unknown"
+
+async def check_rate_limit(user_id: Optional[int], ip_address: str, db: AsyncSession) -> Tuple[bool, int]:
+    """Sprawdza rate limiting. Zwraca (allowed, seconds_until_next)"""
+    now = datetime.now(timezone.utc)
+    
+    if user_id:
+        recent_count = await db.scalar(
+            select(func.count(models.IssueReport.id)).where(
+                models.IssueReport.user_id == user_id,
+                models.IssueReport.created_at >= now - timedelta(hours=1)
+            )
+        )
+        if recent_count is None:
+            recent_count = 0
+        
+        if recent_count < 3:
+            return (True, 0)
+        elif recent_count < 5:
+            return (True, 5)
+        elif recent_count < 10:
+            return (True, 15)
+        else:
+            last_report = await db.scalar(
+                select(models.IssueReport.created_at).where(
+                    models.IssueReport.user_id == user_id
+                ).order_by(desc(models.IssueReport.created_at)).limit(1)
+            )
+            if last_report:
+                seconds_passed = (now - last_report).total_seconds()
+                if seconds_passed < 30:
+                    return (False, int(30 - seconds_passed))
+            return (True, 30)
+    else:
+        recent_count = await db.scalar(
+            select(func.count(models.IssueReport.id)).where(
+                models.IssueReport.ip_address == ip_address,
+                models.IssueReport.created_at >= now - timedelta(hours=1)
+            )
+        )
+        if recent_count is None:
+            recent_count = 0
+        
+        if recent_count >= 1:
+            last_report = await db.scalar(
+                select(models.IssueReport.created_at).where(
+                    models.IssueReport.ip_address == ip_address
+                ).order_by(desc(models.IssueReport.created_at)).limit(1)
+            )
+            if last_report:
+                seconds_passed = (now - last_report).total_seconds()
+                if seconds_passed < 60:
+                    return (False, int(60 - seconds_passed))
+        return (True, 0)
+
+class IssueReportRequest(BaseModel):
+    issue_type: str  # BUG, FEATURE
+    title: str
+    description: str
+
+@app.post("/api/issues")
+async def create_issue(report: IssueReportRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    user = await auth.get_current_user(request, db)
+    ip_address = get_client_ip(request)
+    
+    allowed, wait_seconds = await check_rate_limit(user.id if user else None, ip_address, db)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Zbyt wiele zgłoszeń. Spróbuj ponownie za {wait_seconds} sekund."
+        )
+    
+    new_issue = models.IssueReport(
+        user_id=user.id if user else None,
+        issue_type=report.issue_type,
+        title=report.title,
+        description=report.description,
+        ip_address=ip_address if not user else None,
+        status="PENDING"
+    )
+    db.add(new_issue)
+    await db.commit()
+    await db.refresh(new_issue)
+    
+    return {"status": "success", "id": new_issue.id}
+
+@app.get("/api/admin/issues")
+async def get_issues(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await auth.get_current_user(request, db)
+    if not user or not user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin only")
+    
+    result = await db.execute(
+        select(models.IssueReport, models.User)
+        .outerjoin(models.User, models.IssueReport.user_id == models.User.id)
+        .order_by(desc(models.IssueReport.created_at))
+    )
+    issues = result.all()
+    
+    return [
+        {
+            "id": issue.id,
+            "issue_type": issue.issue_type,
+            "title": issue.title,
+            "description": issue.description,
+            "status": issue.status,
+            "user_id": issue.user_id,
+            "username": user_obj.username if user_obj else None,
+            "avatar_url": user_obj.avatar_url if user_obj else None,
+            "created_at": issue.created_at.isoformat() if issue.created_at else None,
+            "approved_at": issue.approved_at.isoformat() if issue.approved_at else None,
+        }
+        for issue, user_obj in issues
+    ]
+
+@app.post("/api/admin/issues/{issue_id}/approve")
+async def approve_issue(issue_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+    user = await auth.get_current_user(request, db)
+    if not user or not user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin only")
+    
+    issue = await db.get(models.IssueReport, issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    
+    was_already_approved = issue.status == "APPROVED"
+    
+    issue.status = "APPROVED"
+    issue.approved_at = datetime.now(timezone.utc)
+    await db.commit()
+    
+    if issue.user_id and not was_already_approved:
+        badge_type = "BUG_REPORTS" if issue.issue_type == "BUG" else "FEATURE_REQUESTS"
+        await _check_and_award_badges_internal(issue.user_id, badge_type, db)
+        
+        xp_reward = 50 if issue.issue_type == "BUG" else 75
+        user_obj = await db.get(models.User, issue.user_id)
+        if user_obj:
+            user_obj.xp = (user_obj.xp or 0) + xp_reward
+            xp_award = models.XpAward(
+                user_id=issue.user_id,
+                song_id=None,
+                xp_amount=xp_reward,
+                award_type="ISSUE_REPORT"
+            )
+            db.add(xp_award)
+            await db.commit()
+    
+    return {"status": "success"}
+
+@app.post("/api/admin/issues/{issue_id}/reject")
+async def reject_issue(issue_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+    user = await auth.get_current_user(request, db)
+    if not user or not user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin only")
+    
+    issue = await db.get(models.IssueReport, issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    
+    issue.status = "REJECTED"
+    await db.commit()
+    
+    return {"status": "success"}

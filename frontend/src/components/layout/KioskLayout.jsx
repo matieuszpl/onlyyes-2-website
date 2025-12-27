@@ -7,6 +7,7 @@ import VoteButtons from "../VoteButtons";
 import TextGlitch from "../TextGlitch";
 import ImageGlitch from "../ImageGlitch";
 import ActiveListenersWidget from "../ActiveListenersWidget";
+import Card from "../Card";
 import { Play, Pause, Home, ChevronLeft } from "lucide-react";
 import { useAlbumColors } from "../../hooks/useAlbumColors";
 
@@ -17,7 +18,7 @@ function HistoryItem({ song }) {
   const songColors = useAlbumColors(song.thumbnail);
 
   return (
-    <div className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 bg-white/5 border border-white/10 hover:border-primary/50 transition-all rounded-sm relative overflow-hidden">
+    <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-white/5 border border-white/10 relative overflow-hidden">
       {song.thumbnail && !songColors.isDefault && (
         <div
           className="absolute inset-0 opacity-[0.15] blur-[40px] -z-10"
@@ -277,7 +278,7 @@ export default function KioskLayout() {
           {/* Next Song - Full Width */}
           {nextSong && (
             <div className="px-3 sm:px-4 pb-3 sm:pb-4 shrink-0 space-y-2 sm:space-y-3">
-              <div className="glass-panel p-2 sm:p-3 relative overflow-hidden">
+              <Card padding="p-2 sm:p-3" className="relative overflow-hidden">
                 {nextSong?.thumbnail && !nextSongColors.isDefault ? (
                   <div
                     className="absolute inset-0 opacity-[0.42] blur-[80px] scale-150 -z-10"
@@ -311,14 +312,14 @@ export default function KioskLayout() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Card>
               <ActiveListenersWidget />
             </div>
           )}
 
           {/* History - Full Width */}
           <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-            <div className="glass-panel p-2 sm:p-3 relative">
+            <Card padding="p-2 sm:p-3" className="relative">
               <h3 className="font-header text-[10px] sm:text-xs text-primary uppercase tracking-wider mb-2 sm:mb-3">
                 HISTORIA
               </h3>
@@ -333,7 +334,7 @@ export default function KioskLayout() {
                   ))
                 )}
               </div>
-            </div>
+            </Card>
           </div>
         </div>
 
@@ -460,7 +461,7 @@ export default function KioskLayout() {
               {/* Next Song */}
               {nextSong && (
                 <>
-                  <div className="glass-panel p-4 relative overflow-hidden">
+                  <Card className="relative overflow-hidden">
                     {nextSong?.thumbnail && !nextSongColors.isDefault ? (
                       <div
                         className="absolute inset-0 opacity-[0.42] blur-[80px] scale-150 -z-10"
@@ -493,13 +494,13 @@ export default function KioskLayout() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Card>
                   <ActiveListenersWidget />
                 </>
               )}
 
               {/* History */}
-              <div className="glass-panel p-4 relative">
+              <Card className="relative">
                 <h3 className="font-header text-sm text-primary uppercase tracking-wider mb-4">
                   HISTORIA
                 </h3>
@@ -514,7 +515,7 @@ export default function KioskLayout() {
                     ))
                   )}
                 </div>
-              </div>
+              </Card>
             </div>
           </div>
         </div>

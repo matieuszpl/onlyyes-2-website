@@ -31,7 +31,7 @@ export default function FeaturedPlaylist() {
   }, []);
 
   return (
-    <div className="glass-panel p-4 space-y-2 relative">
+    <Card className="space-y-2 relative">
 
       <h3 className="font-header text-sm text-primary uppercase tracking-wider">
         PLAYLISTY
@@ -98,7 +98,7 @@ export default function FeaturedPlaylist() {
         ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 

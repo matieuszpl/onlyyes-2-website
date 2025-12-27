@@ -9,9 +9,11 @@ export default function StatsCard({ icon: Icon, label, value, accent = "primary"
     : "text-primary";
 
   return (
-    <motion.div
+    <Card
+      as={motion.div}
       whileHover={{ scale: 1.05 }}
-      className="glass-panel p-3 interactive-card"
+      padding="p-3"
+      className="interactive-card"
     >
 
       <div className="flex items-center gap-2">
@@ -27,7 +29,7 @@ export default function StatsCard({ icon: Icon, label, value, accent = "primary"
           </div>
         </div>
       </div>
-    </motion.div>
+    </Card>
   );
 }
 

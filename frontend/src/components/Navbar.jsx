@@ -6,7 +6,7 @@ export default function Navbar() {
   const { user, loading, login, logout } = useUser();
 
   return (
-    <nav className="glass-panel border-b border-white/5 fixed top-0 left-0 right-0 z-50">
+    <Card as="nav" className="border-b border-white/5 fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center">
@@ -65,6 +65,6 @@ export default function Navbar() {
           </div>
         </div>
       </div>
-    </nav>
+    </Card>
   );
 }

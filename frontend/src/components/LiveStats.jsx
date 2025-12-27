@@ -3,6 +3,7 @@ import { Users, Music, Clock, BarChart3, Play, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "../api";
 import StatsCard from "./StatsCard";
+import Card from "./Card";
 
 export default function LiveStats() {
   const [stats, setStats] = useState({
@@ -36,7 +37,7 @@ export default function LiveStats() {
 
   if (loading) {
     return (
-      <div className="glass-panel p-4 space-y-3 border-red-400/20">
+      <Card className="space-y-3 border-red-400/20">
         <div className="flex items-center gap-2">
           <motion.div
             animate={{ opacity: [0.3, 0.6, 0.3] }}
@@ -62,7 +63,7 @@ export default function LiveStats() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: i * 0.1 }}
-              className="p-3 bg-white/5 border border-white/10 rounded-sm"
+              className="p-4 bg-white/5 border border-white/10"
             >
               <div className="flex items-center gap-3">
                 <motion.div
@@ -116,7 +117,7 @@ export default function LiveStats() {
   };
 
   return (
-    <div className="glass-panel p-4 space-y-3 border-red-400/20">
+    <Card className="space-y-3 border-red-400/20">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BarChart3 size={16} className="text-red-400" />
@@ -172,6 +173,6 @@ export default function LiveStats() {
           TEST ANIMACJI GLITCH
         </span>
       </motion.button>
-    </div>
+    </Card>
   );
 }

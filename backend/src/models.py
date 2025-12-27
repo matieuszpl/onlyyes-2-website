@@ -87,3 +87,16 @@ class UserBadge(Base):
     badge_id = Column(Integer, ForeignKey("badges.id"), nullable=False)
     awarded_at = Column(DateTime(timezone=True), server_default=func.now())
     awarded_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # NULL dla automatycznych
+
+class IssueReport(Base):
+    __tablename__ = "issue_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # NULL dla gości
+    issue_type = Column(String, nullable=False)  # BUG, FEATURE
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    status = Column(String, default="PENDING")  # PENDING, APPROVED, REJECTED
+    ip_address = Column(String, nullable=True)  # Dla rate limiting gości
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    approved_at = Column(DateTime(timezone=True), nullable=True)

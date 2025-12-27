@@ -24,9 +24,11 @@ export default function TrendingCard({
   const colors = useAlbumColors(thumbnail);
 
   return (
-    <motion.div
+    <Card
+      as={motion.div}
       whileHover={{ scale: 1.02, x: 4 }}
-      className="glass-panel p-3 relative interactive-card overflow-hidden"
+      padding="p-3"
+      className="relative interactive-card overflow-hidden"
     >
       {thumbnail && !colors.isDefault ? (
         <div
@@ -66,6 +68,6 @@ export default function TrendingCard({
           </span>
         </div>
       </div>
-    </motion.div>
+    </Card>
   );
 }

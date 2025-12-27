@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Home, AlertCircle, Server, FileQuestion } from "lucide-react";
 import TextGlitch from "../components/TextGlitch";
+import Card from "../components/Card";
 
 const errorMessages = {
   404: {
@@ -39,7 +40,7 @@ export default function ErrorPage() {
         transition={{ duration: 0.4 }}
         className="w-full max-w-2xl"
       >
-        <div className="glass-panel p-8 md:p-12 relative overflow-hidden">
+        <Card padding="p-8 md:p-12" className="relative overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 left-0 w-64 h-64 bg-primary rounded-full blur-3xl" />
             <div className="absolute bottom-0 right-0 w-64 h-64 bg-accent-magenta rounded-full blur-3xl" />
@@ -108,7 +109,7 @@ export default function ErrorPage() {
               </motion.button>
             </motion.div>
           </div>
-        </div>
+        </Card>
       </motion.div>
     </div>
   );

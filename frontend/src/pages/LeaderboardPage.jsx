@@ -1,24 +1,25 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "../contexts/UserContext";
-import { Music, Clock, TrendingUp, Trophy, Star } from "lucide-react";
-import PageHeader from "../components/layout/PageHeader";
+import { Music, Clock, Trophy, Star, Award } from "lucide-react";
 import api from "../api";
 import UserTooltip from "../components/UserTooltip";
+import TextGlitch from "../components/TextGlitch";
+import Card from "../components/Card";
 
 function XPProgressBar({ progress, nextRankXp }) {
   if (!nextRankXp) {
     return (
-      <div className="w-full bg-bg-secondary/30 rounded-full h-2">
-        <div className="bg-accent h-2 rounded-full" style={{ width: "100%" }} />
+      <div className="w-full bg-white/10 rounded-full h-2">
+        <div className="bg-cyan-400 h-2 rounded-full" style={{ width: "100%" }} />
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-bg-secondary/30 rounded-full h-2">
+    <div className="w-full bg-white/10 rounded-full h-2">
       <div
-        className="bg-accent h-2 rounded-full transition-all duration-300"
+        className="bg-cyan-400 h-2 rounded-full transition-all duration-300"
         style={{ width: `${progress}%` }}
       />
     </div>
@@ -45,19 +46,81 @@ export default function LeaderboardPage() {
     }
   };
 
+  const ranks = [
+    { name: "Szumofon", min_xp: 0 },
+    { name: "Koneser Bitów", min_xp: 500 },
+    { name: "DJ Winamp", min_xp: 1500 },
+    { name: "Kierownik Imprezy", min_xp: 5000 },
+    { name: "Dyrektor Programowy", min_xp: 10000 },
+    { name: "Mistrz Anteny", min_xp: 25000 },
+    { name: "Szef Programu", min_xp: 50000 },
+    { name: "Dyrektor Generalny", min_xp: 100000 },
+    { name: "Właściciel Fali", min_xp: 250000 },
+    { name: "Legenda Radia", min_xp: 500000 },
+  ];
+
+  const getRankProgress = (rank, userXp) => {
+    if (!userXp) return 0;
+    
+    // Jeśli użytkownik już osiągnął tę rangę
+    if (userXp >= rank.min_xp) {
+      return 100;
+    }
+
+    // Znajdź poprzednią rangę
+    const currentRankIndex = ranks.findIndex(r => r.min_xp === rank.min_xp);
+    if (currentRankIndex <= 0) {
+      // To pierwsza ranga, pokaż postęp od 0
+      const neededXp = rank.min_xp;
+      return neededXp > 0 ? Math.min(100, (userXp / neededXp) * 100) : 0;
+    }
+
+    const previousRank = ranks[currentRankIndex - 1];
+    
+    // Oblicz postęp od poprzedniej rangi do obecnej
+    // Jeśli użytkownik nie osiągnął jeszcze poprzedniej rangi, pokaż postęp od 0 do tej rangi
+    if (userXp < previousRank.min_xp) {
+      const neededXp = rank.min_xp;
+      return neededXp > 0 ? Math.min(100, (userXp / neededXp) * 100) : 0;
+    }
+    
+    // Użytkownik osiągnął poprzednią rangę, oblicz postęp od poprzedniej do obecnej
+    const startXp = previousRank.min_xp;
+    const currentXp = userXp - startXp;
+    const neededXp = rank.min_xp - startXp;
+
+    if (neededXp <= 0) return 0;
+    
+    return Math.min(100, Math.max(0, (currentXp / neededXp) * 100));
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
-        <PageHeader subtitle="Top użytkownicy według zdobytego XP" />
-        <div className="glass-panel p-6">
+        <div className="flex flex-col items-center justify-center mb-6">
+          <div className="font-brand text-3xl md:text-4xl text-primary tracking-wider">
+            <TextGlitch
+              text="ONLY YES"
+              altTexts={[
+                "ONLY YES",
+                "0NLY Y3S",
+                "0NL¥ ¥3$",
+                "0N1Y Y35",
+                "#+:|* {&><@$?",
+              ]}
+              className="font-brand"
+            />
+          </div>
+        </div>
+        <Card padding="p-6">
           <div className="space-y-3">
             {[...Array(5)].map((_, idx) => (
-              <motion.div
+              <Card
                 key={idx}
+                as={motion.div}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: idx * 0.05 }}
-                className="p-4 rounded-lg border bg-bg-secondary/30 border-border"
               >
                 <div className="flex items-center gap-4">
                   <motion.div
@@ -108,175 +171,175 @@ export default function LeaderboardPage() {
                     />
                   </div>
                 </div>
-              </motion.div>
+              </Card>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
 
-  const ranks = [
-    { name: "Szumofon", min_xp: 0 },
-    { name: "Koneser Bitów", min_xp: 500 },
-    { name: "DJ Winamp", min_xp: 1500 },
-    { name: "Kierownik Imprezy", min_xp: 5000 },
-    { name: "Dyrektor Programowy", min_xp: 10000 },
-  ];
+  const renderRankCard = () => {
+    const userXp = user?.xp || 0;
+    
+    return (
+      <div className="space-y-3">
+        {ranks.map((rank) => {
+          const progress = getRankProgress(rank, userXp);
+          return (
+            <div key={rank.name} className="space-y-1">
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-white font-bold">{rank.name}</div>
+                <div className="text-[10px] text-white/40">
+                  {rank.min_xp === 0
+                    ? "Start"
+                    : `${rank.min_xp.toLocaleString()} XP`}
+                </div>
+              </div>
+              <div className="w-full h-1 bg-white/10">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 1 }}
+                  className="h-full bg-cyan-400"
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderSplitScreen = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-1 space-y-4 lg:sticky lg:top-6 lg:self-start">
+        <Card padding="p-6">
+          <div className="text-xs text-white/40 mb-4 uppercase">Jak zdobywać XP?</div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Music size={16} className="text-cyan-400 shrink-0" />
+              <div className="flex-1">
+                <div className="text-xs text-white/50">Głosowanie</div>
+                <div className="text-sm font-bold text-cyan-400">+10 XP</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Clock size={16} className="text-cyan-400 shrink-0" />
+              <div className="flex-1">
+                <div className="text-xs text-white/50">Czas słuchania</div>
+                <div className="text-sm font-bold text-cyan-400">+1 XP/min</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Award size={16} className="text-cyan-400 shrink-0" />
+              <div className="flex-1">
+                <div className="text-xs text-white/50">Osiągnięcia</div>
+                <div className="text-sm font-bold text-cyan-400">Różne nagrody</div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card padding="p-6">
+          <div className="text-xs text-white/40 mb-4 uppercase">Rangi</div>
+          {renderRankCard()}
+        </Card>
+      </div>
+
+      <div className="lg:col-span-2 space-y-3">
+        {leaderboard.map((entry, idx) => {
+          const isCurrentUser = user && entry.id === user.id;
+          const isTopOne = entry.rank === 1;
+          return (
+            <motion.div
+              key={entry.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: idx * 0.02 }}
+              className={`p-4 border transition-all ${
+                isTopOne
+                  ? "bg-gradient-to-r from-cyan-400/20 to-cyan-400/10 border-cyan-400"
+                  : isCurrentUser
+                  ? "bg-cyan-400/10 border-cyan-400/50"
+                  : "bg-white/5 border-white/10"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <div className={`text-xl font-bold font-mono w-10 text-center ${
+                  isTopOne ? "text-cyan-400" : "text-white"
+                }`}>
+                  {isTopOne ? <Trophy size={20} className="text-cyan-400" /> : `#${entry.rank}`}
+                </div>
+                {entry.avatar_url && (
+                  <img
+                    src={entry.avatar_url}
+                    alt={entry.username}
+                    className={`rounded-full ${
+                      isTopOne ? "w-14 h-14 border-2 border-cyan-400" : "w-12 h-12"
+                    }`}
+                  />
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <UserTooltip userId={entry.id} username={entry.username}>
+                      <span className={`font-bold ${isTopOne ? "text-cyan-400 text-lg" : "text-white"}`}>
+                        {entry.username}
+                      </span>
+                    </UserTooltip>
+                    {isTopOne && <Star size={14} className="text-cyan-400 fill-cyan-400" />}
+                    {isCurrentUser && !isTopOne && (
+                      <span className="text-xs px-2 py-0.5 bg-cyan-400 text-black rounded">TY</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-white/50 mb-2">{entry.rank_name}</div>
+                  <XPProgressBar progress={entry.progress} nextRankXp={entry.next_rank_xp} />
+                  <div className="text-xs text-white/40 mt-1 flex justify-between">
+                    <span>{entry.xp} XP</span>
+                    {entry.next_rank && (
+                      <span>{entry.next_rank_xp - entry.xp} XP do {entry.next_rank}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      <PageHeader subtitle="Top użytkownicy według zdobytego XP" />
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <div className="lg:col-span-3">
-          <div className="glass-panel p-4 space-y-3">
-            {leaderboard.map((entry, idx) => {
-              const isCurrentUser = user && entry.id === user.id;
-              const isTopOne = entry.rank === 1;
-              return (
-                <motion.div
-                  key={entry.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className={`p-4 rounded-lg border transition-all ${
-                    isTopOne
-                      ? "bg-gradient-to-r from-accent/30 to-primary/20 border-accent border-2 shadow-lg shadow-accent/20"
-                      : isCurrentUser
-                      ? "bg-accent/20 border-accent"
-                      : "bg-bg-secondary/30 border-border"
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`text-2xl font-bold font-mono w-12 text-center ${
-                        isTopOne ? "text-accent" : "text-text-primary"
-                      }`}
-                    >
-                      {isTopOne ? (
-                        <div className="flex items-center justify-center">
-                          <Trophy size={24} className="text-accent" />
-                        </div>
-                      ) : (
-                        `#${entry.rank}`
-                      )}
-                    </div>
-                    {entry.avatar_url && (
-                      <img
-                        src={entry.avatar_url}
-                        alt={entry.username}
-                        className={`rounded-full ${
-                          isTopOne
-                            ? "w-16 h-16 border-2 border-accent"
-                            : "w-12 h-12"
-                        }`}
-                      />
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <UserTooltip
-                          userId={entry.id}
-                          username={entry.username}
-                        >
-                          <span
-                            className={`font-bold ${
-                              isTopOne ? "text-accent text-lg" : ""
-                            }`}
-                          >
-                            {entry.username}
-                          </span>
-                        </UserTooltip>
-                        {isTopOne && (
-                          <Star size={16} className="text-accent fill-accent" />
-                        )}
-                        {isCurrentUser && !isTopOne && (
-                          <span className="text-xs px-2 py-0.5 bg-accent text-bg-primary rounded">
-                            TY
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-sm text-text-secondary mb-2">
-                        {entry.rank_name}
-                      </div>
-                      <XPProgressBar
-                        progress={entry.progress}
-                        nextRankXp={entry.next_rank_xp}
-                      />
-                      <div className="text-xs text-text-secondary mt-1 flex justify-between">
-                        <span>{entry.xp} XP</span>
-                        {entry.next_rank && (
-                          <span>
-                            {entry.next_rank_xp - entry.xp} XP do{" "}
-                            {entry.next_rank}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="lg:col-span-1 space-y-4">
-          <div className="glass-panel p-4">
-            <h2 className="font-header text-sm text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
-              <TrendingUp size={16} />
-              JAK ZDOBYWAĆ XP?
-            </h2>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Music size={16} className="text-accent shrink-0" />
-                <div className="flex-1">
-                  <div className="font-mono text-xs text-text-secondary">
-                    Głosowanie
-                  </div>
-                  <div className="font-mono text-sm font-bold text-accent">
-                    +10 XP
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Clock size={16} className="text-accent shrink-0" />
-                <div className="flex-1">
-                  <div className="font-mono text-xs text-text-secondary">
-                    Czas słuchania
-                  </div>
-                  <div className="font-mono text-sm font-bold text-accent">
-                    +1 XP/min
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="glass-panel p-4">
-            <h2 className="font-header text-sm text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Trophy size={16} />
-              RANGI
-            </h2>
-            <div className="space-y-2">
-              {ranks.map((rank, idx) => (
-                <div
-                  key={rank.name}
-                  className="p-2 bg-white/5 border border-white/10 rounded-sm"
-                >
-                  <div className="font-mono text-xs text-primary font-bold">
-                    {rank.name}
-                  </div>
-                  <div className="font-mono text-[10px] text-text-secondary">
-                    {rank.min_xp === 0
-                      ? "Start"
-                      : `${rank.min_xp.toLocaleString()} XP`}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+      <div className="flex flex-col items-center justify-center mb-6">
+        <div className="font-brand text-3xl md:text-4xl text-primary tracking-wider">
+          <TextGlitch
+            text="ONLY YES"
+            altTexts={[
+              "ONLY YES",
+              "0NLY Y3S",
+              "0NL¥ ¥3$",
+              "0N1Y Y35",
+              "#+:|* {&><@$?",
+            ]}
+            className="font-brand"
+          />
         </div>
       </div>
+
+      <div className="flex items-center gap-3 mb-8">
+        <Trophy className="text-primary" size={32} />
+        <div>
+          <h1 className="font-header text-4xl text-primary uppercase tracking-wider mb-2">
+            RANKING
+          </h1>
+          <p className="font-mono text-sm text-text-secondary">
+            Top użytkownicy według zdobytego XP
+          </p>
+        </div>
+      </div>
+
+      {renderSplitScreen()}
     </div>
   );
 }

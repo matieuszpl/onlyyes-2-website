@@ -4,6 +4,11 @@ RANKS = [
     {"name": "DJ Winamp", "min_xp": 1500},
     {"name": "Kierownik Imprezy", "min_xp": 5000},
     {"name": "Dyrektor Programowy", "min_xp": 10000},
+    {"name": "Mistrz Anteny", "min_xp": 25000},
+    {"name": "Szef Programu", "min_xp": 50000},
+    {"name": "Dyrektor Generalny", "min_xp": 100000},
+    {"name": "Właściciel Fali", "min_xp": 250000},
+    {"name": "Legenda Radia", "min_xp": 500000},
 ]
 
 def get_rank(xp: int) -> dict:

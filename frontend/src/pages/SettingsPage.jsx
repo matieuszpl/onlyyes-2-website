@@ -13,7 +13,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <PageHeader subtitle="Skonfiguruj swoje doświadczenie" />
 
-      <div className="glass-panel p-6 space-y-6">
+      <Card padding="p-6" className="space-y-6">
         <div>
           <h2 className="font-header text-xl text-primary mb-4">MOTYW</h2>
           <ThemeSwitcher />
@@ -87,7 +87,7 @@ export default function SettingsPage() {
             </button>
           )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

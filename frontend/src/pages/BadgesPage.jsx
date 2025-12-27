@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useUser } from "../contexts/UserContext";
 import api from "../api";
 import PageHeader from "../components/layout/PageHeader";
+import Card from "../components/Card";
 import {
   Award,
   CheckCircle2,
@@ -16,6 +17,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { getIconComponent } from "../utils/badgeIcons";
+import TextGlitch from "../components/TextGlitch";
 
 export default function BadgesPage() {
   const { user } = useUser();
@@ -99,34 +101,6 @@ export default function BadgesPage() {
     return `${badge.percentage}% słuchaczy zdobyło tę odznakę`;
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <PageHeader
-          title="OSIĄGNIĘCIA"
-          subtitle="Wszystkie dostępne osiągnięcia"
-          icon={Award}
-        />
-        <div className="glass-panel p-6">
-          <div className="space-y-4">
-            {[1, 2, 3].map((idx) => (
-              <div
-                key={idx}
-                className="h-20 bg-white/5 border border-white/10 rounded animate-pulse"
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const unlockedCount = userBadges.length;
-  const totalCount = allBadges.length;
-  const overallProgress =
-    totalCount > 0 ? (unlockedCount / totalCount) * 100 : 0;
-
-  // Mapowanie kategorii do ikon
   const categoryIcons = {
     Słuchanie: Headphones,
     Głosowanie: ThumbsUp,
@@ -134,7 +108,6 @@ export default function BadgesPage() {
     Specjalne: Star,
   };
 
-  // Grupuj osiągnięcia według typu
   const categories = {
     Słuchanie: allBadges.filter(
       (b) =>
@@ -147,7 +120,9 @@ export default function BadgesPage() {
     Aktywność: allBadges.filter(
       (b) =>
         b.auto_award_type === "SUGGESTIONS" ||
-        b.auto_award_type === "PLAYLIST_CONTRIBUTOR"
+        b.auto_award_type === "PLAYLIST_CONTRIBUTOR" ||
+        b.auto_award_type === "BUG_REPORTS" ||
+        b.auto_award_type === "FEATURE_REQUESTS"
     ),
     Specjalne: allBadges.filter(
       (b) =>
@@ -161,283 +136,230 @@ export default function BadgesPage() {
     if (badge.color) {
       return badge.color;
     }
-    return "#00f3ff"; // domyślny primary
+    return "#00f3ff";
   };
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="OSIĄGNIĘCIA"
-        subtitle="Wszystkie dostępne osiągnięcia"
-        icon={Award}
-      />
-
-      <div className="glass-panel p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/20 rounded-sm border border-primary/30">
-              <Award size={20} className="text-primary" />
-            </div>
-            <div>
-              <div className="font-mono text-xs text-text-secondary mb-1">
-                POSTĘP
-              </div>
-              <div className="font-header text-lg text-primary">
-                {unlockedCount} / {totalCount}
-              </div>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="font-mono text-xs text-text-secondary mb-1">
-              PROCENT
-            </div>
-            <div className="font-header text-lg text-accent-cyan">
-              {Math.round(overallProgress)}%
-            </div>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="mt-4 pt-4 border-t border-white/10">
-          <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden shadow-inner">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${overallProgress}%` }}
-              transition={{ duration: 1, delay: 0.2 }}
-              className="h-full rounded-full shadow-lg"
-              style={{
-                background:
-                  "linear-gradient(to right, var(--primary), var(--accent-cyan))",
-              }}
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col items-center justify-center mb-6">
+          <div className="font-brand text-3xl md:text-4xl text-primary tracking-wider">
+            <TextGlitch
+              text="ONLY YES"
+              altTexts={[
+                "ONLY YES",
+                "0NLY Y3S",
+                "0NL¥ ¥3$",
+                "0N1Y Y35",
+                "#+:|* {&><@$?",
+              ]}
+              className="font-brand"
             />
           </div>
         </div>
+        <Card padding="p-6">
+          <div className="space-y-4">
+            {[1, 2, 3].map((idx) => (
+              <div
+                key={idx}
+                className="h-20 bg-white/5 border border-white/10 animate-pulse"
+              />
+            ))}
+          </div>
+        </Card>
       </div>
+    );
+  }
 
-      <div className="glass-panel p-6">
-        <div className="space-y-8">
-          {Object.entries(categories).map(([categoryName, badges]) => {
-            const unlockedInCategory = badges.filter((b) =>
-              getUserBadge(b.id)
-            ).length;
-            const progress =
-              badges.length > 0
-                ? (unlockedInCategory / badges.length) * 100
-                : 0;
-            const CategoryIcon = categoryIcons[categoryName] || Zap;
+  const unlockedCount = userBadges.length;
+  const totalCount = allBadges.length;
+  const overallProgress =
+    totalCount > 0 ? (unlockedCount / totalCount) * 100 : 0;
 
-            return (
-              <div key={categoryName} className="space-y-4">
-                {/* Category Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/20 rounded border border-primary/30">
-                      <CategoryIcon size={18} className="text-primary" />
+  const renderSplitScreen = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-1 space-y-4 lg:sticky lg:top-6 lg:self-start">
+        <Card padding="p-6">
+          <div className="text-xs text-white/40 mb-4 uppercase">Statystyki</div>
+          <div>
+            <div className="text-xs text-white/40 mb-1">Postęp</div>
+            <div className="flex items-end justify-between">
+              <div className="text-3xl font-light text-white">
+                {unlockedCount} / {totalCount}
+              </div>
+                <div className="text-right flex-1 flex flex-col items-end">
+                  <div className="text-sm text-white mb-1">
+                    {Math.round(overallProgress)}%
+                  </div>
+                <div className="w-1/2 h-1.5 bg-white/10">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${overallProgress}%` }}
+                    transition={{ duration: 1 }}
+                    className="h-full bg-cyan-400"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card padding="p-6">
+          <div className="text-xs text-white/40 mb-4 uppercase">Kategorie</div>
+          <div className="space-y-3">
+            {Object.entries(categories).map(([categoryName, badges]) => {
+              const unlockedInCategory = badges.filter((b) =>
+                getUserBadge(b.id)
+              ).length;
+              const progress =
+                badges.length > 0
+                  ? (unlockedInCategory / badges.length) * 100
+                  : 0;
+              const CategoryIcon = categoryIcons[categoryName] || Zap;
+
+              return (
+                <div key={categoryName} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CategoryIcon size={16} className="text-white/60" />
+                      <span className="text-sm text-white">{categoryName}</span>
                     </div>
-                    <div>
-                      <h3 className="font-header text-lg text-primary">
-                        {categoryName}
-                      </h3>
-                      <div className="font-mono text-xs text-text-secondary">
-                        {unlockedInCategory} / {badges.length} osiągnięć
+                    <div className="text-right flex-1 flex flex-col items-end">
+                      <div className="text-sm text-white mb-1">
+                        {Math.round(progress)}%
+                      </div>
+                      <div className="w-1/2 h-1.5 bg-white/10">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${progress}%` }}
+                          transition={{ duration: 1 }}
+                          className="h-full bg-cyan-400"
+                        />
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-header text-2xl text-accent-cyan">
-                      {Math.round(progress)}%
-                    </div>
-                    <div className="font-mono text-[10px] text-text-secondary">
-                      POSTĘP
-                    </div>
-                  </div>
                 </div>
+              );
+            })}
+          </div>
+        </Card>
+      </div>
 
-                {/* Progress Bar */}
-                <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
-                    transition={{ duration: 1, delay: 0.2 }}
-                    className="h-full rounded-full"
-                    style={{
-                      background:
-                        "linear-gradient(to right, var(--primary), var(--accent-cyan))",
-                    }}
-                  />
-                </div>
+      <div className="lg:col-span-2 space-y-6">
+        {Object.entries(categories).map(([categoryName, badges]) => {
+          if (badges.length === 0) return null;
+          
+          const CategoryIcon = categoryIcons[categoryName] || Zap;
 
-                {/* Badges Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {badges.map((badge, idx) => {
-                    const userBadge = getUserBadge(badge.id);
-                    const unlocked = !!userBadge;
-                    const repeatable = isRepeatable(badge);
-                    const maxCount = getMaxCount(badge);
-                    const currentCount = userBadge?.count || 0;
-                    const IconComponent = getIconComponent(badge.icon);
-                    const badgeColor = getBadgeColor(badge);
+          return (
+            <div key={categoryName} className="space-y-3">
+              <div className="flex items-center gap-3 border-b border-white/10 pb-2">
+                <CategoryIcon size={20} className="text-white/60" />
+                <h3 className="text-lg font-light text-white">{categoryName}</h3>
+              </div>
 
-                    return (
-                      <motion.div
-                        key={badge.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className={`relative p-4 rounded-lg border-l-4 transition-all ${
-                          unlocked
-                            ? "hover:bg-opacity-20"
-                            : "bg-white/5 border-l-white/20 border-white/10 opacity-60"
-                        }`}
-                        style={{
-                          backgroundColor: unlocked
-                            ? `${badgeColor}15`
-                            : undefined,
-                          borderLeftColor: unlocked ? badgeColor : undefined,
-                          borderColor: unlocked ? `${badgeColor}30` : undefined,
-                        }}
-                      >
-                        <div className="flex items-start gap-4">
-                          {/* Icon */}
-                          <div
-                            className={`flex-shrink-0 w-16 h-16 rounded-lg flex items-center justify-center ${
-                              unlocked
-                                ? "border-2"
-                                : "bg-white/5 border border-white/10"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {badges.map((badge, idx) => {
+                  const userBadge = getUserBadge(badge.id);
+                  const unlocked = !!userBadge;
+                  const repeatable = isRepeatable(badge);
+                  const maxCount = getMaxCount(badge);
+                  const currentCount = userBadge?.count || 0;
+                  const IconComponent = getIconComponent(badge.icon);
+                  const badgeColor = getBadgeColor(badge);
+
+                  return (
+                    <motion.div
+                      key={badge.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: idx * 0.03 }}
+                      className={`p-4 border transition-all relative ${
+                        unlocked
+                          ? "bg-white/5 border-white/20"
+                          : "bg-white/2 border-white/5 opacity-50"
+                      }`}
+                    >
+                      {unlocked && userBadge?.awarded_at && (
+                        <div className="absolute top-3 right-3 text-xs text-white/40">
+                          {new Date(userBadge.awarded_at).toLocaleDateString("pl-PL")}
+                        </div>
+                      )}
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`w-10 h-10 flex items-center justify-center ${
+                            unlocked ? "bg-white/10" : "bg-white/5"
+                          }`}
+                        >
+                          <IconComponent
+                            size={20}
+                            className={unlocked ? "" : "opacity-30"}
+                            style={{ color: unlocked ? badgeColor : undefined }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3
+                            className={`text-sm font-light mb-1 ${
+                              unlocked ? "text-white" : "text-white/40"
                             }`}
-                            style={{
-                              backgroundColor: unlocked
-                                ? `${badgeColor}20`
-                                : undefined,
-                              borderColor: unlocked
-                                ? `${badgeColor}50`
-                                : undefined,
-                            }}
                           >
-                            <IconComponent
-                              size={32}
-                              className={
-                                unlocked ? "" : "text-text-secondary opacity-40"
-                              }
-                              style={{
-                                color: unlocked ? badgeColor : undefined,
-                                filter: unlocked
-                                  ? "none"
-                                  : "grayscale(100%) brightness(0.3)",
-                              }}
-                            />
-                          </div>
-
-                          {/* Content */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-1">
-                              <h3
-                                className="font-mono text-sm font-bold"
-                                style={{
-                                  color: unlocked ? badgeColor : undefined,
-                                }}
-                              >
-                                {badge.name}
-                              </h3>
-                              {unlocked && (
-                                <div className="flex items-center gap-2">
-                                  {repeatable && maxCount ? (
-                                    <span
-                                      className="px-2 py-0.5 rounded text-[9px] font-mono font-bold border"
-                                      style={{
-                                        backgroundColor: `${badgeColor}20`,
-                                        color: badgeColor,
-                                        borderColor: `${badgeColor}50`,
-                                      }}
-                                    >
-                                      {currentCount}x/{maxCount}x
-                                    </span>
-                                  ) : (
-                                    <CheckCircle2
-                                      size={14}
-                                      style={{ color: badgeColor }}
-                                    />
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                            <p className="font-mono text-xs text-text-secondary mb-2 line-clamp-2">
-                              {badge.description}
-                            </p>
-                            <div className="flex items-center gap-4 text-[10px] mb-2">
-                              <div className="flex items-center gap-1">
-                                <Trophy
-                                  size={10}
-                                  className="text-accent-cyan"
-                                />
-                                <span className="font-mono text-accent-cyan font-bold">
-                                  +{badge.xp_reward} XP
-                                </span>
-                              </div>
-                              {unlocked && userBadge?.awarded_at && (
-                                <div className="flex items-center gap-1">
-                                  <Calendar
-                                    size={10}
-                                    className="text-text-secondary"
-                                  />
-                                  <span className="font-mono text-text-secondary">
-                                    {new Date(
-                                      userBadge.awarded_at
-                                    ).toLocaleDateString("pl-PL")}
-                                  </span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-1">
-                                <Users
-                                  size={10}
-                                  className="text-text-secondary"
-                                />
-                                <span className="font-mono text-text-secondary">
-                                  {getStatisticText(badge)}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Progress indicator */}
-                            <div className="mt-2">
-                              <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{
-                                    width: `${badge.percentage || 0}%`,
-                                  }}
-                                  transition={{
-                                    delay: idx * 0.1 + 0.3,
-                                    duration: 0.8,
-                                  }}
-                                  className="h-full rounded-full"
-                                  style={{
-                                    backgroundColor: unlocked
-                                      ? badgeColor
-                                      : "rgba(255, 255, 255, 0.2)",
-                                  }}
-                                />
-                              </div>
-                              <div className="text-right mt-0.5">
-                                <span className="font-mono text-[9px] text-text-secondary">
-                                  {badge.percentage > 0
-                                    ? `${badge.percentage}%`
-                                    : "0%"}{" "}
-                                  słuchaczy
-                                </span>
-                              </div>
-                            </div>
+                            {badge.name}
+                          </h3>
+                          <p className="text-xs text-white/50 line-clamp-2 mb-2">
+                            {badge.description}
+                          </p>
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className={unlocked ? "text-cyan-400" : "text-white/40"}>
+                              +{badge.xp_reward} XP
+                            </span>
+                            {unlocked && repeatable && maxCount && (
+                              <span className="text-white/40">{currentCount}x/{maxCount}x</span>
+                            )}
                           </div>
                         </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col items-center justify-center mb-6">
+        <div className="font-brand text-3xl md:text-4xl text-primary tracking-wider">
+          <TextGlitch
+            text="ONLY YES"
+            altTexts={[
+              "ONLY YES",
+              "0NLY Y3S",
+              "0NL¥ ¥3$",
+              "0N1Y Y35",
+              "#+:|* {&><@$?",
+            ]}
+            className="font-brand"
+          />
         </div>
       </div>
+
+      <div className="flex items-center gap-3 mb-8">
+        <Award className="text-primary" size={32} />
+        <div>
+          <h1 className="font-header text-4xl text-primary uppercase tracking-wider mb-2">
+            OSIĄGNIĘCIA
+          </h1>
+          <p className="font-mono text-sm text-text-secondary">
+            Wszystkie dostępne osiągnięcia
+          </p>
+        </div>
+      </div>
+
+      {renderSplitScreen()}
     </div>
   );
 }

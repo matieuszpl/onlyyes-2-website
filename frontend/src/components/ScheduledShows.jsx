@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Calendar } from "lucide-react";
 import api from "../api";
+import Card from "./Card";
 
 export default function ScheduledShows() {
   const [shows, setShows] = useState([]);
@@ -173,7 +174,7 @@ export default function ScheduledShows() {
   };
 
   return (
-    <div className="glass-panel p-4 space-y-2 relative">
+    <Card className="space-y-2 relative">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Calendar size={16} className="text-primary" />
@@ -202,12 +203,13 @@ export default function ScheduledShows() {
         {loading ? (
           <div className="space-y-3">
             {[...Array(3)].map((_, idx) => (
-              <motion.div
+              <Card
                 key={idx}
+                as={motion.div}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: idx * 0.05 }}
-                className="p-1.5 bg-white/5 border border-white/10 rounded-sm"
+                padding="p-2"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 space-y-1.5">
@@ -240,7 +242,7 @@ export default function ScheduledShows() {
                     className="h-2 bg-white/10 rounded w-16"
                   />
                 </div>
-              </motion.div>
+              </Card>
             ))}
           </div>
         ) : shows.length === 0 ? (
@@ -281,9 +283,10 @@ export default function ScheduledShows() {
                       {upcomingShows.map((show, idx) => {
                         const isToday = idx < upcomingToday.length;
                         return (
-                          <div
+                          <Card
                             key={show.id}
-                            className="p-1.5 bg-white/5 border border-white/10 hover:border-primary/50 transition-all rounded-sm"
+                            as={motion.div}
+                padding="p-2"
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1 min-w-0">
@@ -306,7 +309,7 @@ export default function ScheduledShows() {
                                 )}
                               </div>
                             </div>
-                          </div>
+                          </Card>
                         );
                       })}
                     </div>
@@ -323,6 +326,6 @@ export default function ScheduledShows() {
           })()
         )}
       </div>
-    </div>
+    </Card>
   );
 }

@@ -99,7 +99,7 @@ export default function ActiveListenersWidget({ compact = false }) {
   }
 
   return (
-    <div className="glass-panel p-2 sm:p-3 relative">
+    <Card padding="p-2 sm:p-3" className="relative">
       <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-2.5">
         <Users size={12} className="sm:w-4 sm:h-4 text-primary" />
         <h3 className="font-header text-[10px] sm:text-xs text-primary uppercase tracking-wider">
@@ -136,6 +136,6 @@ export default function ActiveListenersWidget({ compact = false }) {
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }

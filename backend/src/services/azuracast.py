@@ -14,6 +14,9 @@ class AzuraCastClient:
         self._files_cache = {}
         self._cache_timestamp = None
         self._cache_ttl = 300
+        self._schedules_cache = None
+        self._schedules_cache_timestamp = None
+        self._schedules_cache_ttl = 3600  # 1 godzina
 
     def _get_headers(self) -> Dict[str, str]:
         headers = {"Accept": "application/json"}
@@ -342,88 +345,137 @@ class AzuraCastClient:
             return None
 
     async def get_schedules(self) -> Optional[List[Dict[str, Any]]]:
-        """Pobiera zaplanowane audycje z endpointu /station/{station_id}/schedule"""
+        """Pobiera zaplanowane audycje z endpointu /station/{station_id}/schedule dla całego tygodnia"""
         if not self.base_url:
             logger.warning("AzuraCast URL not configured")
             return None
         
+        # Sprawdź cache
+        import time
+        current_time = time.time()
+        if (self._schedules_cache is not None and 
+            self._schedules_cache_timestamp is not None and
+            (current_time - self._schedules_cache_timestamp) < self._schedules_cache_ttl):
+            logger.debug("Returning cached schedules")
+            return self._schedules_cache
+        
         try:
+            from datetime import datetime, timedelta, timezone
+            from collections import defaultdict
+            
+            # Oblicz poniedziałek obecnego tygodnia
+            now = datetime.now(timezone.utc)
+            days_since_monday = now.weekday()
+            monday = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            # Pobierz każdy dzień osobno
+            all_schedule_items = []
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                url = f"{self.base_url}/api/station/{self.station_id}/schedule"
-                logger.debug(f"Fetching schedule from: {url}")
-                response = await client.get(url, headers=self._get_headers())
-                response.raise_for_status()
-                schedule_data = response.json()
-                
-                logger.info(f"AzuraCast schedule raw response: {schedule_data}")
-                
-                if not isinstance(schedule_data, list):
-                    logger.warning(f"Schedule data is not a list: {type(schedule_data)}")
-                    return None
-                
-                from datetime import datetime
-                
-                # Grupuj wystąpienia po nazwie i wyciągnij wzorzec
-                schedule_groups = {}
-                
-                for item in schedule_data:
-                    logger.debug(f"Processing schedule item: {item}")
-                    if not isinstance(item, dict):
-                        continue
+                for day_offset in range(7):
+                    # Dla każdego dnia użyj daty poprzedniego dnia 23:59
+                    target_day = monday + timedelta(days=day_offset)
+                    previous_day = target_day - timedelta(days=1)
+                    query_time = previous_day.replace(hour=23, minute=59, second=0, microsecond=0)
+                    query_time_iso = query_time.isoformat().replace('+00:00', 'Z')
                     
-                    name = item.get("name") or item.get("title", "Auto DJ")
-                    start_iso = item.get("start")
-                    end_iso = item.get("end")
-                    
-                    if not start_iso or not end_iso:
-                        continue
+                    url = f"{self.base_url}/api/station/{self.station_id}/schedule?now={query_time_iso}&rows=100"
+                    logger.debug(f"Fetching schedule for day {day_offset} from: {url}")
                     
                     try:
-                        # Parsuj ISO daty
-                        start_dt = datetime.fromisoformat(start_iso.replace('Z', '+00:00'))
-                        end_dt = datetime.fromisoformat(end_iso.replace('Z', '+00:00'))
+                        response = await client.get(url, headers=self._get_headers())
+                        response.raise_for_status()
+                        day_data = response.json()
                         
-                        # Wyciągnij godzinę i minutę
-                        start_time = f"{start_dt.hour:02d}:{start_dt.minute:02d}"
-                        end_time = f"{end_dt.hour:02d}:{end_dt.minute:02d}"
-                        
-                        # Wyciągnij dzień tygodnia (0=poniedziałek w Pythonie, ale AzuraCast używa 0=niedziela)
-                        day_of_week = start_dt.weekday()
-                        # Konwertuj na format AzuraCast (0=niedziela, 1=poniedziałek, ...)
-                        azuracast_day = (day_of_week + 1) % 7
-                        
-                        # Grupuj po nazwie i czasie
-                        key = f"{name}|{start_time}|{end_time}"
-                        if key not in schedule_groups:
-                            schedule_groups[key] = {
-                                "name": name,
-                                "start_time": start_time,
-                                "end_time": end_time,
-                                "days": set(),
-                                "ids": [],
-                                "is_enabled": True
-                            }
-                        
-                        schedule_groups[key]["days"].add(azuracast_day)
-                        schedule_groups[key]["ids"].append(item.get("id"))
-                        
+                        if isinstance(day_data, list):
+                            all_schedule_items.extend(day_data)
                     except Exception as e:
-                        logger.warning(f"Error parsing schedule item {item.get('id')}: {e}")
+                        logger.warning(f"Error fetching schedule for day {day_offset}: {e}")
                         continue
+            
+            if not all_schedule_items:
+                logger.warning("No schedule items retrieved")
+                return None
+            
+            logger.info(f"Retrieved {len(all_schedule_items)} total schedule items")
+            
+            # Grupuj wystąpienia po nazwie i czasie
+            schedule_groups = defaultdict(lambda: {
+                "name": "",
+                "start_time": "",
+                "end_time": "",
+                "days": set(),
+                "ids": [],
+                "occurrences": []
+            })
+            
+            for item in all_schedule_items:
+                if not isinstance(item, dict):
+                    continue
                 
-                # Konwertuj grupy na listę
-                schedules = []
-                for key, group in schedule_groups.items():
-                    schedules.append({
-                        "id": group["ids"][0] if group["ids"] else None,
-                        "name": group["name"],
-                        "start_time": group["start_time"],
-                        "end_time": group["end_time"],
-                        "days": sorted(list(group["days"])),
-                        "is_enabled": group["is_enabled"]
+                name = item.get("name") or item.get("title", "Auto DJ")
+                start_iso = item.get("start")
+                end_iso = item.get("end")
+                
+                if not start_iso or not end_iso:
+                    continue
+                
+                try:
+                    # Parsuj ISO daty
+                    start_dt = datetime.fromisoformat(start_iso.replace('Z', '+00:00'))
+                    end_dt = datetime.fromisoformat(end_iso.replace('Z', '+00:00'))
+                    
+                    # Wyciągnij godzinę i minutę
+                    start_time = f"{start_dt.hour:02d}:{start_dt.minute:02d}"
+                    end_time = f"{end_dt.hour:02d}:{end_dt.minute:02d}"
+                    
+                    # Wyciągnij dzień tygodnia (0=poniedziałek w Pythonie, ale AzuraCast używa 0=niedziela)
+                    day_of_week = start_dt.weekday()
+                    # Konwertuj na format AzuraCast (0=niedziela, 1=poniedziałek, ...)
+                    azuracast_day = (day_of_week + 1) % 7
+                    
+                    # Grupuj po nazwie i czasie
+                    key = f"{name}|{start_time}|{end_time}"
+                    group = schedule_groups[key]
+                    group["name"] = name
+                    group["start_time"] = start_time
+                    group["end_time"] = end_time
+                    group["days"].add(azuracast_day)
+                    group["ids"].append(item.get("id"))
+                    group["occurrences"].append({
+                        "date": start_dt.date(),
+                        "day": azuracast_day
                     })
+                    
+                except Exception as e:
+                    logger.warning(f"Error parsing schedule item {item.get('id')}: {e}")
+                    continue
+            
+            # Konwertuj grupy na listę i wykryj audycje codzienne
+            schedules = []
+            for key, group in schedule_groups.items():
+                # Sprawdź czy audycja występuje codziennie
+                # Jeśli występuje we wszystkich 7 dniach tygodnia, uznaj za codzienną
+                unique_days = list(group["days"])
+                is_daily = len(unique_days) >= 7
                 
-                return schedules if schedules else None
+                # Jeśli jest codzienna, ustaw days na pustą listę (oznacza wszystkie dni)
+                # W przeciwnym razie użyj konkretnych dni
+                days = [] if is_daily else sorted(unique_days)
+                
+                schedules.append({
+                    "id": group["ids"][0] if group["ids"] else None,
+                    "name": group["name"],
+                    "start_time": group["start_time"],
+                    "end_time": group["end_time"],
+                    "days": days,
+                    "is_enabled": group.get("is_enabled", True)
+                })
+            
+            # Zapisz w cache
+            self._schedules_cache = schedules
+            self._schedules_cache_timestamp = current_time
+            
+            return schedules if schedules else None
         except httpx.HTTPStatusError as e:
             logger.error(f"AzuraCast API HTTP error (schedules): {e.response.status_code} - {e.response.text}")
             return None

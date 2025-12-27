@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import ImageGlitch from "./ImageGlitch";
 import { useAlbumColors } from "../hooks/useAlbumColors";
 import api from "../api";
+import Card from "./Card";
 
 const DEFAULT_ALBUM_ART =
   "https://azura.onlyyes.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
@@ -85,12 +86,12 @@ export default function TopCharts({ limit = 10 }) {
   };
 
   return (
-    <div className="glass-panel p-4 space-y-3 relative">
+    <Card className="space-y-3 relative">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-0">
           <div className="flex items-center gap-2">
             <Trophy size={18} className="text-primary" />
-            <h3 className="font-header text-base text-primary uppercase tracking-wider">
+            <h3 className="font-header text-sm text-primary uppercase tracking-wider">
               TOP {limit}
             </h3>
           </div>
@@ -135,78 +136,28 @@ export default function TopCharts({ limit = 10 }) {
       {loading ? (
         <div className="space-y-2">
           {[...Array(limit)].map((_, idx) => (
-            <motion.div
+            <div
               key={idx}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: idx * 0.05 }}
-              className="flex items-center gap-3 p-2 bg-white/5 border border-white/10 rounded-sm relative overflow-hidden"
+              className="flex items-center gap-3 p-2"
             >
-              <div className="w-10 h-10 flex items-center justify-center shrink-0">
-                <motion.div
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: idx * 0.1,
-                  }}
-                  className="w-8 h-8 bg-primary/20 rounded border border-primary/30"
-                />
+              <div className="w-8 h-8 bg-white/20 rounded shrink-0 animate-pulse" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 bg-white/20 rounded w-3/4 animate-pulse" />
+                <div className="h-2 bg-white/10 rounded w-1/2 animate-pulse" />
               </div>
-              <div className="w-10 h-10 bg-white/10 rounded shrink-0 animate-pulse" />
-              <div className="flex-1 min-w-0 space-y-2">
-                <motion.div
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: idx * 0.1,
-                  }}
-                  className="h-3 bg-white/20 rounded w-3/4"
-                />
-                <motion.div
-                  animate={{ opacity: [0.2, 0.4, 0.2] }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: idx * 0.15,
-                  }}
-                  className="h-2 bg-white/10 rounded w-1/2"
-                />
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                >
-                  <Loader2 size={14} className="text-primary/50" />
-                </motion.div>
-                <motion.div
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: idx * 0.1,
-                  }}
-                  className="h-3 bg-white/10 rounded w-12"
-                />
-              </div>
-            </motion.div>
+              <div className="h-2 bg-white/10 rounded w-12 animate-pulse" />
+            </div>
           ))}
         </div>
       ) : charts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-          <Trophy size={32} className="text-primary/50 mb-3" />
-          <div className="font-header text-sm text-text-primary mb-2">
+        <div className="flex flex-col items-center justify-center py-6 px-4 text-center">
+          <Trophy size={24} className="text-primary/50 mb-2" />
+          <div className="font-mono text-xs text-text-secondary">
             BRAK GŁOSÓW
-          </div>
-          <div className="font-mono text-xs text-text-secondary max-w-xs">
-            Nie ma jeszcze żadnych głosów w tym okresie. Bądź pierwszy i
-            zagłosuj na swoje ulubione utwory!
           </div>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {charts.map((chart, idx) => {
             const trend = getTrendIndicator(chart);
             const TrendIcon = trend?.icon;
@@ -216,11 +167,10 @@ export default function TopCharts({ limit = 10 }) {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                whileHover={{ x: 4, scale: 1.02 }}
-                className="flex items-center gap-3 p-2 bg-white/5 border border-white/10 hover:border-primary/50 transition-all rounded-sm relative overflow-hidden"
+                className="flex items-center gap-3 p-2.5 bg-white/5 border border-white/10 relative overflow-hidden"
               >
                 <SongItemBackground thumbnail={chart.thumbnail} />
-                <div className="w-10 text-center font-mono text-lg font-bold text-primary shrink-0 relative z-10">
+                <div className="w-8 text-center font-mono text-xs font-bold text-primary shrink-0 relative z-10">
                   #{chart.position}
                 </div>
                 {chart.thumbnail && (
@@ -234,14 +184,14 @@ export default function TopCharts({ limit = 10 }) {
                   </div>
                 )}
                 <div className="flex-1 min-w-0 relative z-10">
-                  <div className="font-header text-xs text-text-primary truncate">
+                  <div className="font-header text-xs text-text-primary mb-0.5 uppercase truncate">
                     {chart.title || "Unknown"}
                   </div>
-                  <div className="font-mono text-[10px] text-text-secondary truncate">
+                  <div className="font-mono text-[10px] text-text-secondary uppercase truncate">
                     {chart.artist || "Unknown"}
                   </div>
                   {chart.is_new && (
-                    <div className="font-mono text-[9px] text-cyan-400 mt-1">
+                    <div className="font-mono text-[9px] text-cyan-400 mt-0.5">
                       NOWOŚĆ NA LIŚCIE TOP 10
                     </div>
                   )}
@@ -257,6 +207,6 @@ export default function TopCharts({ limit = 10 }) {
           })}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { cn } from "../utils/cn";
+import Card from "./Card";
 
 export default function AudioVisualizer({ isPlaying, className }) {
   const canvasRef = useRef(null);
@@ -63,11 +64,11 @@ export default function AudioVisualizer({ isPlaying, className }) {
 
   if (!isPlaying) {
     return (
-      <div className="bg-white/5 border border-white/10 p-4 text-center">
+      <Card className="text-center">
         <p className="font-mono text-xs text-text-secondary">
           URUCHOM STREAM, ABY ZOBACZYĆ WIZUALIZATOR
         </p>
-      </div>
+      </Card>
     );
   }
 

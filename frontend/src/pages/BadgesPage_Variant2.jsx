@@ -127,7 +127,7 @@ export default function BadgesPage() {
           subtitle="Wszystkie dostępne osiągnięcia"
           icon={Award}
         />
-        <div className="glass-panel p-6">
+        <Card padding="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((idx) => (
               <motion.div
@@ -147,12 +147,12 @@ export default function BadgesPage() {
                   className="h-20 w-20 bg-white/20 rounded-lg mx-auto mb-4"
                 />
               </motion.div>
-            ))}
-          </div>
+          ))}
         </div>
-      </div>
-    );
-  }
+      </Card>
+    </div>
+  );
+}
 
   const unlockedCount = userBadges.length;
   const totalCount = allBadges.length;
@@ -165,7 +165,7 @@ export default function BadgesPage() {
         icon={Award}
       />
 
-      <div className="glass-panel p-6">
+      <Card padding="p-6">
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/20 rounded-sm border border-primary/30">

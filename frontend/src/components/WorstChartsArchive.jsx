@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
 import ImageGlitch from "./ImageGlitch";
 import { useAlbumColors } from "../hooks/useAlbumColors";
 import api from "../api";
+import Card from "./Card";
 
 const DEFAULT_ALBUM_ART =
   "https://azura.onlyyes.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
@@ -69,7 +70,7 @@ export default function WorstChartsArchive() {
   };
 
   return (
-    <div className="glass-panel p-4 space-y-3 relative">
+    <Card className="space-y-3 relative">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
           <AlertTriangle size={16} className="text-red-500" />
@@ -119,7 +120,8 @@ export default function WorstChartsArchive() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: idx * 0.05 }}
-              className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-sm"
+              as={motion.div}
+              className="flex items-center gap-3"
             >
               <motion.div
                 animate={{ opacity: [0.3, 0.6, 0.3] }}
@@ -177,13 +179,13 @@ export default function WorstChartsArchive() {
             const trend = getTrendIndicator(chart);
             const TrendIcon = trend?.icon;
             return (
-              <motion.div
+              <Card
                 key={chart.position}
+                as={motion.div}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                whileHover={{ x: 4, scale: 1.02 }}
-                className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 hover:border-red-500/50 transition-all rounded-sm relative overflow-hidden"
+                className="flex items-center gap-3 relative overflow-hidden"
               >
                 <SongItemBackground thumbnail={chart.thumbnail} />
                 <div className="w-12 text-center font-mono text-xl font-bold text-red-500 shrink-0 relative z-10">
@@ -218,11 +220,11 @@ export default function WorstChartsArchive() {
                     {chart.votes} GŁOSÓW
                   </div>
                 </div>
-              </motion.div>
+              </Card>
             );
           })}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

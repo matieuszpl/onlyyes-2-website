@@ -6,6 +6,7 @@ import CopyStreamButton from "../CopyStreamButton";
 import ActiveListenersWidget from "../ActiveListenersWidget";
 import TextGlitch from "../TextGlitch";
 import ImageGlitch from "../ImageGlitch";
+import Card from "../Card";
 import { Play, Pause, Music2, Radio } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAlbumColors } from "../../hooks/useAlbumColors";
@@ -40,16 +41,18 @@ export default function HeroPlayer() {
   }, [nextSongData]);
 
   return (
-    <motion.div
+    <Card
+      as={motion.div}
       layoutId="player"
-      className="glass-panel p-3 sm:p-4 space-y-3 sm:space-y-4"
+      padding="p-0"
+      className="overflow-hidden"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
     >
       {/* Teraz Grane */}
-      <div className="space-y-3 relative overflow-hidden rounded p-3">
+      <div className="space-y-3 relative overflow-hidden p-3 sm:p-4">
         {nowPlaying.thumbnail && !nowPlayingColors.isDefault ? (
           <div
             className="absolute inset-0 opacity-[0.42] blur-[80px] scale-150 -z-10"
@@ -202,7 +205,7 @@ export default function HeroPlayer() {
       </div>
 
       {/* Następny Utwór */}
-      <div className="border-t border-white/10 pt-3 sm:pt-4 space-y-1.5 sm:space-y-2 relative">
+      <div className="border-t border-white/10 px-3 sm:px-4 pt-3 sm:pt-4 pb-3 sm:pb-4 space-y-1.5 sm:space-y-2 relative">
         <div className="absolute -left-1 top-3 sm:top-4 bottom-0 w-1 bg-gradient-to-b from-accent-magenta to-accent-cyan rounded-full"></div>
         <div className="flex items-center gap-1.5 sm:gap-2">
           <Music2 size={12} className="sm:w-4 sm:h-4 text-accent-cyan" />
@@ -211,7 +214,7 @@ export default function HeroPlayer() {
           </h3>
         </div>
         {nextSong ? (
-          <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gradient-to-r from-white/5 to-white/[0.02] border border-white/10 hover:border-accent-cyan/50 transition-all rounded-sm relative overflow-hidden">
+          <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gradient-to-r from-white/5 to-white/[0.02] border border-white/10 relative overflow-hidden">
             {nextSong?.thumbnail && !nextSongColors.isDefault ? (
               <div
                 className="absolute inset-0 opacity-[0.42] blur-[80px] scale-150 -z-10"
@@ -290,6 +293,6 @@ export default function HeroPlayer() {
           </div>
         )}
       </div>
-    </motion.div>
+    </Card>
   );
 }

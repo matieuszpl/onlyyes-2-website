@@ -76,16 +76,6 @@ body {
     var(--bg-app);
 }
 
-[data-theme="work"] .glass-panel {
-  background: rgba(42, 26, 15, 0.9);
-  border-color: rgba(242, 109, 0, 0.3);
-}
-
-[data-theme="work"] .glass-panel:hover {
-  border-color: rgba(242, 109, 0, 0.5);
-  box-shadow: 0 6px 20px rgba(242, 109, 0, 0.3),
-    0 0 0 1px rgba(242, 109, 0, 0.2);
-}
 
 [data-theme="rgb"] {
   --primary: transparent;
@@ -128,16 +118,6 @@ body {
     var(--bg-app);
 }
 
-[data-theme="holiday"] .glass-panel {
-  border-color: rgba(220, 20, 60, 0.4);
-  background: rgba(22, 27, 34, 0.9);
-}
-
-[data-theme="holiday"] .glass-panel:hover {
-  border-color: rgba(79, 195, 247, 0.5);
-  box-shadow: 0 6px 20px rgba(220, 20, 60, 0.4),
-    0 0 0 1px rgba(79, 195, 247, 0.3), 0 0 30px rgba(34, 139, 34, 0.2);
-}
 
 [data-theme="holiday"] .btn-cut:hover {
   box-shadow: 0 0 20px rgba(220, 20, 60, 0.6), 0 0 40px rgba(79, 195, 247, 0.4),
@@ -303,46 +283,6 @@ body {
   }
 }
 
-[data-theme="oldschool"] .glass-panel {
-  border: 3px double #c4ff00;
-  box-shadow: 0 0 10px rgba(196, 255, 0, 0.4),
-    inset 0 0 20px rgba(196, 255, 0, 0.05), 0 0 0 1px rgba(196, 255, 0, 0.2);
-  background: rgba(0, 0, 0, 0.6);
-  text-shadow: 0 0 2px rgba(196, 255, 0, 0.5);
-  position: relative;
-}
-
-[data-theme="oldschool"] .glass-panel::before {
-  content: "";
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(
-    45deg,
-    transparent,
-    rgba(196, 255, 0, 0.1),
-    transparent
-  );
-  z-index: -1;
-  animation: oldschool-borderGlow 3s ease-in-out infinite;
-}
-
-@keyframes oldschool-borderGlow {
-  0%,
-  100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
-[data-theme="oldschool"] .glass-panel:hover {
-  box-shadow: 0 0 15px rgba(196, 255, 0, 0.6),
-    inset 0 0 25px rgba(196, 255, 0, 0.1), 0 0 0 1px rgba(196, 255, 0, 0.3);
-}
 
 [data-theme="oldschool"] .btn-cut {
   border: 2px solid #c4ff00;
@@ -426,47 +366,7 @@ body::before {
   font-family: "JetBrains Mono", monospace;
 }
 
-/* Card Base */
-.glass-panel {
-  background: rgba(var(--surface-rgb, 18, 18, 18), 0.85);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.glass-panel::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(var(--primary-rgb), 0.4),
-    transparent
-  );
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.glass-panel:hover {
-  border-color: rgba(var(--primary-rgb), 0.25);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(var(--primary-rgb), 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transform: translateY(-1px);
-}
-
-.glass-panel:hover::before {
-  opacity: 1;
-}
+/* Card Base - removed, now using Card component */
 
 /* Cut Corner Button */
 .btn-cut {
@@ -587,9 +487,6 @@ body::before {
   --primary-alt: transparent;
 }
 
-[data-theme="rgb"] .glass-panel {
-  animation: rgb-border 5s linear infinite;
-}
 
 [data-theme="rgb"] .TextGlitch-blendA {
   animation: rgb-accent-cyan-anim 5s linear infinite;
@@ -643,13 +540,6 @@ body::before {
   }
 }
 
-[data-theme="rgb"] .glass-panel::before {
-  animation: rgb-bg-gradient 5s linear infinite;
-}
-
-[data-theme="rgb"] .glass-panel:hover {
-  animation: rgb-border 5s linear infinite, rgb-shadow 5s linear infinite;
-}
 
 [data-theme="rgb"] .btn-cut {
   animation: rgb-border 5s linear infinite;
@@ -1430,9 +1320,6 @@ nav[class*="fixed"][class*="bottom"] {
     border-radius: 0 !important;
   }
 
-  .glass-panel {
-    padding: 0.75rem !important;
-  }
 
   .btn-cut {
     min-height: 36px;
@@ -1451,10 +1338,6 @@ nav[class*="fixed"][class*="bottom"] {
 }
 
 @media (max-width: 480px) {
-  .glass-panel {
-    padding: 0.625rem !important;
-    border-radius: 6px !important;
-  }
 
   .btn-cut {
     padding: 0.5rem 0.75rem !important;
@@ -1535,7 +1418,7 @@ nav[class*="fixed"][class*="bottom"] {
   }
 
   /* Cards on phones - smaller */
-  .kiosk-right-panel .glass-panel {
+  .kiosk-right-panel > div {
     padding: 0.75rem !important;
     border-radius: 8px !important;
     margin-bottom: 0.5rem !important;
@@ -1547,42 +1430,42 @@ nav[class*="fixed"][class*="bottom"] {
   }
 
   /* Next Song card - smaller */
-  .kiosk-right-panel .glass-panel:first-child img {
+  .kiosk-right-panel > div:first-child img {
     width: 2.75rem !important;
     height: 2.75rem !important;
     aspect-ratio: 1 / 1 !important;
     object-fit: cover !important;
   }
 
-  .kiosk-right-panel .glass-panel:first-child .font-header {
+  .kiosk-right-panel > div:first-child .font-header {
     font-size: 0.75rem !important;
   }
 
-  .kiosk-right-panel .glass-panel:first-child .font-mono {
+  .kiosk-right-panel > div:first-child .font-mono {
     font-size: 0.625rem !important;
   }
 
   /* History items - smaller */
-  .kiosk-right-panel .glass-panel:last-child {
+  .kiosk-right-panel > div:last-child {
     padding: 0.5rem !important;
   }
 
-  .kiosk-right-panel .glass-panel:last-child .space-y-1 > * + * {
+  .kiosk-right-panel > div:last-child .space-y-1 > * + * {
     margin-top: 0.375rem !important;
   }
 
-  .kiosk-right-panel .glass-panel:last-child img {
+  .kiosk-right-panel > div:last-child img {
     width: 2rem !important;
     height: 2rem !important;
     aspect-ratio: 1 / 1 !important;
     object-fit: cover !important;
   }
 
-  .kiosk-right-panel .glass-panel:last-child .font-header {
+  .kiosk-right-panel > div:last-child .font-header {
     font-size: 0.6875rem !important;
   }
 
-  .kiosk-right-panel .glass-panel:last-child .font-mono {
+  .kiosk-right-panel > div:last-child .font-mono {
     font-size: 0.5625rem !important;
   }
 
@@ -1744,5 +1627,14 @@ nav[class*="fixed"][class*="bottom"] {
   /* Reduce header logo size */
   .kiosk-main-content > div:first-child > div:first-child > div:last-child {
     font-size: 1.25rem !important;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
   }
 }

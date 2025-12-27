@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "../contexts/UserContext";
 import api from "../api";
+import Card from "./Card";
 
 export default function UserProfile() {
   const { user } = useUser();
@@ -35,7 +36,7 @@ export default function UserProfile() {
 
   if (!user) {
     return (
-      <div className="glass-panel p-4 relative">
+      <Card className="relative">
         <p className="font-mono text-sm text-text-secondary">
           ZALOGUJ SIĘ, ABY ZOBACZYĆ PROFIL
         </p>
@@ -45,7 +46,7 @@ export default function UserProfile() {
 
   if (loading) {
     return (
-      <div className="glass-panel p-4 space-y-3 relative">
+      <Card className="space-y-3 relative">
         <div className="flex items-center gap-4">
           <motion.div
             animate={{ opacity: [0.3, 0.6, 0.3] }}
@@ -94,19 +95,20 @@ export default function UserProfile() {
                 repeat: Infinity,
                 delay: idx * 0.1,
               }}
-              className="bg-white/5 border border-white/10 p-4 text-center"
+              as={motion.div}
+              className="text-center"
             >
               <div className="h-6 bg-white/20 rounded w-12 mx-auto mb-2" />
               <div className="h-3 bg-white/10 rounded w-16 mx-auto" />
             </motion.div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+          )        )}
+      </Card>
+    </Card>
+  );
+}
 
   return (
-    <div className="glass-panel p-4 space-y-3 relative">
+    <Card className="space-y-3 relative">
       <div className="flex items-center gap-4">
         {user.avatar && (
           <img
@@ -151,7 +153,7 @@ export default function UserProfile() {
 
       {stats && (
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white/5 border border-white/10 p-4 text-center">
+          <Card className="text-center">
             <div className="font-mono text-xl font-bold text-primary mb-1">
               {stats.suggestions_count}
             </div>
@@ -159,20 +161,20 @@ export default function UserProfile() {
               PROPOZYCJI
             </div>
           </div>
-          <div className="bg-white/5 border border-white/10 p-4 text-center">
+          <Card className="text-center">
             <div className="font-mono text-xl font-bold text-primary mb-1">
               {stats.votes_count}
             </div>
             <div className="font-mono text-xs text-text-secondary">GŁOSÓW</div>
           </div>
-          <div className="bg-white/5 border border-white/10 p-4 text-center">
+          <Card className="text-center">
             <div className="font-mono text-xl font-bold text-primary mb-1">
               {stats.reputation_score}
             </div>
             <div className="font-mono text-xs text-text-secondary">
               REPUTACJA
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
@@ -189,7 +191,7 @@ export default function UserProfile() {
             {xpHistory.map((item) => (
               <div
                 key={item.id}
-                className="bg-white/5 border border-white/10 p-3 hover:border-primary/50 transition-all rounded-sm"
+                className="bg-white/5 border border-white/10 p-4"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -234,7 +236,7 @@ export default function UserProfile() {
             {history.map((item) => (
               <div
                 key={item.id}
-                className="bg-white/5 border border-white/10 p-3 hover:border-primary/50 transition-all rounded-sm"
+                className="bg-white/5 border border-white/10 p-4"
               >
                 <div className="flex justify-between items-start">
                   <div>
@@ -254,7 +256,7 @@ export default function UserProfile() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </Card>
+    </Card>
   );
 }

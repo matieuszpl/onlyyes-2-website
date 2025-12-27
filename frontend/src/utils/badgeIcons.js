@@ -8,6 +8,7 @@ import {
   Radio,
   Lightbulb,
   Trophy,
+  Crown,
 } from "lucide-react";
 
 // Mapowanie emotikonów na ikony z lucide-react
@@ -21,6 +22,7 @@ export const iconMap = {
   "📻": Radio,
   "💡": Lightbulb,
   "🏆": Trophy,
+  "👑": Crown,
 };
 
 export const getIconComponent = (iconString) => {

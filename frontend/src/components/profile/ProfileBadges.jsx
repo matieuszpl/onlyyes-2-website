@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "../../contexts/UserContext";
 import api from "../../api";
-import { Star } from "lucide-react";
 import { getIconComponent } from "../../utils/badgeIcons";
+import Card from "../Card";
 
 export default function ProfileBadges() {
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
   const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,6 +33,7 @@ export default function ProfileBadges() {
       const newFeaturedId = currentFeatured?.id === badgeId ? null : badgeId;
       await api.put("/users/me/badges/feature", { badge_id: newFeaturedId });
       await loadBadges();
+      await refreshUser();
     } catch (error) {
       console.error("Feature badge error:", error);
     }
@@ -40,10 +41,7 @@ export default function ProfileBadges() {
 
   if (loading) {
     return (
-      <div className="glass-panel p-4">
-        <h4 className="font-header text-sm text-primary uppercase tracking-wider mb-4">
-          OSIĄGNIĘCIA
-        </h4>
+      <Card>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((idx) => (
             <motion.div
@@ -51,7 +49,8 @@ export default function ProfileBadges() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: idx * 0.1 }}
-              className="bg-white/5 border border-white/10 p-4 text-center"
+              as={motion.div}
+              className="text-center"
             >
               <motion.div
                 animate={{ opacity: [0.3, 0.6, 0.3] }}
@@ -74,68 +73,91 @@ export default function ProfileBadges() {
             </motion.div>
           ))}
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="glass-panel p-4 space-y-4">
-      <h4 className="font-header text-sm text-primary uppercase tracking-wider">
-        ODZNAKI
-      </h4>
+    <Card className="space-y-4">
+      {badges.length > 0 && (
+        <p className="font-mono text-[10px] text-text-secondary">
+          Wybierz osiągnięcie które chcesz wyróżnić w swoim profilu oraz
+          zastosować jego styl
+        </p>
+      )}
       {badges.length === 0 ? (
         <p className="font-mono text-sm text-text-secondary">BRAK OSIĄGNIĘĆ</p>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {badges.map((badge, idx) => (
-            <motion.div
-              key={badge.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className={`relative bg-white/5 border p-4 text-center rounded-sm cursor-pointer transition-all hover:border-primary/50 ${
-                badge.is_featured
-                  ? "border-primary border-2"
-                  : "border-white/10"
-              }`}
-              onClick={() => handleFeature(badge.id)}
-            >
-              {badge.is_featured && (
-                <div className="absolute top-1 right-1">
-                  <Star size={16} className="text-primary fill-primary" />
-                </div>
-              )}
-              <div
-                className="mb-2 flex items-center justify-center"
-                style={{ color: badge.color || "#ffffff" }}
+          {badges.map((badge, idx) => {
+            const badgeColor = badge.color || "var(--primary)";
+            return (
+              <motion.div
+                key={badge.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="relative border p-4 text-left rounded-sm cursor-pointer transition-all overflow-hidden"
+                style={{
+                  borderColor: `${badgeColor}60`,
+                  borderWidth: badge.is_featured ? "2px" : "1px",
+                  background: `linear-gradient(135deg, ${badgeColor}25 0%, ${badgeColor}10 50%, transparent 100%)`,
+                }}
+                onClick={() => handleFeature(badge.id)}
               >
-                {(() => {
-                  const IconComponent = getIconComponent(badge.icon);
-                  return <IconComponent size={32} />;
-                })()}
-              </div>
-              <div className="font-mono text-xs text-text-primary font-bold mb-1">
-                {badge.name}
-              </div>
-              {badge.description && (
-                <div className="font-mono text-[10px] text-text-secondary line-clamp-2">
-                  {badge.description}
+                {badge.is_featured && (
+                  <div
+                    className="absolute top-2 right-2 px-2 py-1 rounded border font-mono text-xs font-bold uppercase"
+                    style={{
+                      color: badgeColor,
+                      backgroundColor: `${badgeColor}20`,
+                      borderColor: `${badgeColor}60`,
+                    }}
+                  >
+                    WYBRANE
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <div
+                    className="p-2 rounded border shrink-0"
+                    style={{
+                      backgroundColor: `${badgeColor}25`,
+                      borderColor: `${badgeColor}50`,
+                    }}
+                  >
+                    {(() => {
+                      const IconComponent = getIconComponent(badge.icon);
+                      return (
+                        <IconComponent
+                          size={24}
+                          style={{
+                            color: badgeColor,
+                          }}
+                        />
+                      );
+                    })()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className="font-mono text-sm font-bold truncate mb-0.5"
+                      style={{
+                        color: badgeColor,
+                      }}
+                    >
+                      {badge.name}
+                    </div>
+                    {badge.description && (
+                      <div className="font-mono text-[9px] text-text-secondary line-clamp-1">
+                        {badge.description}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-              {badge.awarded_at && (
-                <div className="font-mono text-[9px] text-text-secondary mt-2">
-                  {new Date(badge.awarded_at).toLocaleDateString("pl-PL")}
-                </div>
-              )}
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       )}
-      {badges.length > 0 && (
-        <p className="font-mono text-[10px] text-text-secondary">
-          Kliknij osiągnięcie, aby wyróżnić
-        </p>
-      )}
-    </div>
+    </Card>
   );
 }

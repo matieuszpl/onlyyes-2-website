@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Music, Heart, UserPlus, Radio, Activity } from "lucide-react";
+import { Music, Heart, UserPlus, Radio, Activity, ThumbsUp, ThumbsDown } from "lucide-react";
 import api from "../api";
 import UserTooltip from "./UserTooltip";
+import Card from "./Card";
+import ImageGlitch from "./ImageGlitch";
+import { getIconComponent } from "../utils/badgeIcons";
 
 const iconMap = {
   heart: Heart,
@@ -11,14 +13,44 @@ const iconMap = {
   radio: Radio,
 };
 
-const getActivityColor = (type, voteType) => {
+const getActivityIcon = (type, voteType) => {
   if (type === "vote") {
-    return voteType === "LIKE" ? "text-green-400" : "text-red-400";
+    return voteType === "LIKE" || voteType === "like" || voteType === "upvote" ? ThumbsUp : ThumbsDown;
   }
   if (type === "suggestion") {
-    return "text-accent-cyan";
+    return Music;
+  }
+  return Activity;
+};
+
+const getActivityColor = (type, voteType) => {
+  if (type === "vote") {
+    return voteType === "LIKE" || voteType === "like" || voteType === "upvote" ? "text-green-400" : "text-red-400";
+  }
+  if (type === "suggestion") {
+    return "text-cyan-400";
   }
   return "text-primary";
+};
+
+const getActivityGradient = (type, voteType) => {
+  if (type === "vote") {
+    return voteType === "LIKE" || voteType === "like" || voteType === "upvote" ? "from-green-500/30 via-green-400/20 to-green-500/30" : "from-red-500/30 via-red-400/20 to-red-500/30";
+  }
+  if (type === "suggestion") {
+    return "from-cyan-500/30 via-cyan-400/20 to-cyan-500/30";
+  }
+  return "from-primary/30 via-primary/20 to-primary/30";
+};
+
+const getActivityBorderColor = (type, voteType) => {
+  if (type === "vote") {
+    return voteType === "LIKE" || voteType === "like" || voteType === "upvote" ? "border-green-400/50" : "border-red-400/50";
+  }
+  if (type === "suggestion") {
+    return "border-cyan-400/50";
+  }
+  return "border-primary/50";
 };
 
 const formatTimeAgo = (minutesAgo) => {
@@ -69,15 +101,14 @@ export default function ActivityFeed() {
 
           return {
             id: item.timestamp || Date.now(),
-            icon: Icon,
             text: item.text,
             username: item.username,
             user_id: item.user_id,
             avatar_url: item.avatar_url,
             type: item.type,
             vote_type: item.vote_type,
-            color: getActivityColor(item.type, item.vote_type),
             time: timeText,
+            featured_badge: item.featured_badge,
           };
         });
         setFeed(activities);
@@ -97,11 +128,17 @@ export default function ActivityFeed() {
     if (!item.username || !item.user_id) return item.text;
     const parts = item.text.split(item.username);
     if (parts.length < 2) return item.text;
+    const badgeColor = item.featured_badge?.color || "var(--primary)";
     return (
       <>
         {parts[0]}
         <UserTooltip userId={item.user_id} username={item.username}>
-          <span className="text-primary hover:text-accent-cyan cursor-pointer font-bold transition-colors">
+          <span 
+            className="cursor-pointer font-bold transition-colors"
+            style={{
+              color: badgeColor,
+            }}
+          >
             {item.username}
           </span>
         </UserTooltip>
@@ -111,7 +148,7 @@ export default function ActivityFeed() {
   };
 
   return (
-    <div className="glass-panel p-4 space-y-2 relative">
+    <Card className="space-y-2 relative">
       <div className="flex items-center gap-2 mb-2">
         <Activity size={14} className="text-primary" />
         <h3 className="font-header text-sm text-primary uppercase tracking-wider">
@@ -120,88 +157,94 @@ export default function ActivityFeed() {
       </div>
 
       {loading ? (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {[...Array(5)].map((_, idx) => (
-            <motion.div
+            <div
               key={idx}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className="flex items-center gap-2 p-1.5 bg-white/5 border border-white/10 rounded-sm"
+              className="flex items-center gap-3 p-2"
             >
-              <motion.div
-                animate={{ opacity: [0.3, 0.6, 0.3] }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  delay: idx * 0.1,
-                }}
-                className="w-3.5 h-3.5 bg-white/20 rounded"
-              />
-              <div className="flex-1 space-y-1">
-                <motion.div
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: idx * 0.1,
-                  }}
-                  className="h-2.5 bg-white/20 rounded w-3/4"
-                />
-                <motion.div
-                  animate={{ opacity: [0.2, 0.4, 0.2] }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: idx * 0.15,
-                  }}
-                  className="h-2 bg-white/10 rounded w-1/2"
-                />
+              <div className="w-8 h-8 bg-white/20 rounded shrink-0 animate-pulse" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 bg-white/20 rounded w-24 animate-pulse" />
+                <div className="h-2 bg-white/10 rounded w-32 animate-pulse" />
               </div>
-            </motion.div>
+              <div className="h-2 bg-white/10 rounded w-12 animate-pulse" />
+            </div>
           ))}
         </div>
       ) : feed.length === 0 ? (
-        <div className="font-mono text-[10px] text-text-secondary">
+        <p className="font-mono text-xs text-text-secondary p-2">
           BRAK AKTYWNOŚCI
-        </div>
+        </p>
       ) : (
         <div className="space-y-1.5">
-          {feed.map((item, idx) => {
-            const Icon = item.icon;
+          {feed.map((item) => {
+            const Icon = getActivityIcon(item.type, item.vote_type);
+            const color = getActivityColor(item.type, item.vote_type);
+            const gradient = getActivityGradient(item.type, item.vote_type);
+            const borderColor = getActivityBorderColor(item.type, item.vote_type);
             return (
-              <motion.div
+              <div
                 key={item.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="flex items-center gap-2 p-1.5 bg-white/5 border border-white/10 hover:border-primary/50 transition-all rounded-sm"
+                className="flex items-center gap-3 p-2.5 bg-white/5 border border-white/10"
               >
-                {item.avatar_url ? (
-                  <img
-                    src={item.avatar_url}
-                    alt={item.username}
-                    className="w-6 h-6 border border-primary/50 rounded-full object-cover shrink-0"
-                  />
-                ) : (
-                  <div className="w-6 h-6 border border-primary/50 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                    <UserPlus size={12} className="text-text-secondary" />
-                  </div>
-                )}
-                <Icon size={12} className={item.color} />
+                <div className={`w-8 h-8 flex items-center justify-center rounded shrink-0 ${color} ${borderColor} relative overflow-hidden`}>
+                  <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
+                  <Icon size={14} className="relative z-10" />
+                </div>
+                <div className="relative shrink-0">
+                  {item.avatar_url ? (
+                    <img
+                      src={item.avatar_url}
+                      alt={item.username}
+                      className="w-8 h-8 border-2 rounded-full object-cover"
+                      style={{
+                        borderColor: item.featured_badge?.color || "var(--primary)",
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="w-8 h-8 border-2 rounded-full bg-white/5 flex items-center justify-center"
+                      style={{
+                        borderColor: item.featured_badge?.color || "var(--primary)",
+                      }}
+                    >
+                      <UserPlus size={12} className="text-text-secondary" />
+                    </div>
+                  )}
+                  {item.featured_badge && (
+                    <div
+                      className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border border-white/20 flex items-center justify-center"
+                      style={{
+                        backgroundColor: item.featured_badge.color || "var(--primary)",
+                      }}
+                    >
+                      {(() => {
+                        const IconComponent = getIconComponent(item.featured_badge.icon);
+                        return (
+                          <IconComponent
+                            size={8}
+                            className="text-black"
+                            strokeWidth={2.5}
+                          />
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-mono text-[10px] text-text-primary">
                     {renderActivityText(item)}
                   </div>
-                  <div className="font-mono text-[9px] text-text-secondary">
-                    {item.time}
-                  </div>
                 </div>
-              </motion.div>
+                <div className="font-mono text-[10px] text-text-secondary shrink-0">
+                  {item.time}
+                </div>
+              </div>
             );
           })}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

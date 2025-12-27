@@ -5,6 +5,7 @@ import TextGlitch from "./TextGlitch";
 import ImageGlitch from "./ImageGlitch";
 import { useRadioEvents } from "../contexts/RadioEventsContext";
 import { useAlbumColors } from "../hooks/useAlbumColors";
+import Card from "./Card";
 
 const DEFAULT_ALBUM_ART =
   "https://azura.onlyyes.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
@@ -61,7 +62,7 @@ export default function SongHistory() {
   }, [recentSongs]);
 
   return (
-    <div className="glass-panel p-4 space-y-2">
+    <Card className="space-y-2">
       <div className="flex items-center gap-2">
         <History size={16} className="text-primary" />
         <h3 className="font-header text-sm text-primary uppercase tracking-wider">
@@ -72,59 +73,31 @@ export default function SongHistory() {
       {loading ? (
         <div className="space-y-2">
           {[...Array(5)].map((_, idx) => (
-            <motion.div
+            <div
               key={idx}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: idx * 0.05 }}
-              className="flex items-center gap-2 p-2 bg-white/5 border border-white/10 rounded-sm relative overflow-hidden"
+              className="flex items-center gap-3 p-2"
             >
-              <div className="w-10 h-10 bg-white/10 rounded shrink-0 animate-pulse" />
-              <div className="flex-1 min-w-0 space-y-2">
-                <motion.div
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: idx * 0.1,
-                  }}
-                  className="h-3 bg-white/20 rounded w-3/4"
-                />
-                <motion.div
-                  animate={{ opacity: [0.2, 0.4, 0.2] }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: idx * 0.15,
-                  }}
-                  className="h-2 bg-white/10 rounded w-1/2"
-                />
+              <div className="w-8 h-8 bg-white/20 rounded shrink-0 animate-pulse" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 bg-white/20 rounded w-3/4 animate-pulse" />
+                <div className="h-2 bg-white/10 rounded w-1/2 animate-pulse" />
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                >
-                  <Loader2 size={14} className="text-primary/50" />
-                </motion.div>
-              </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       ) : songs.length === 0 ? (
-        <div className="font-mono text-xs text-text-secondary">
+        <p className="font-mono text-xs text-text-secondary p-2">
           BRAK HISTORII
-        </div>
+        </p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {songs.map((song, idx) => (
             <motion.div
               key={`${song.title}-${song.artist}-${idx}`}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
-              whileHover={{ x: 4, scale: 1.02 }}
-              className="flex items-center gap-2 p-2 bg-white/5 border border-white/10 hover:border-primary/50 transition-all rounded-sm relative overflow-hidden"
+              className="flex items-center gap-3 p-2.5 bg-white/5 border border-white/10 relative overflow-hidden"
             >
               <SongItemBackground thumbnail={song.thumbnail} />
               {song.thumbnail && (
@@ -154,10 +127,10 @@ export default function SongHistory() {
                         })
                         .join(""),
                     ]}
-                    className="font-header text-xs text-text-primary truncate"
+                    className="font-header text-xs text-text-primary mb-0.5 uppercase truncate"
                   />
                 ) : (
-                  <div className="font-header text-xs text-text-primary truncate">
+                  <div className="font-header text-xs text-text-primary mb-0.5 uppercase truncate">
                     {song.title}
                   </div>
                 )}
@@ -177,10 +150,10 @@ export default function SongHistory() {
                         })
                         .join(""),
                     ]}
-                    className="font-mono text-[10px] text-text-secondary truncate"
+                    className="font-mono text-[10px] text-text-secondary uppercase truncate"
                   />
                 ) : (
-                  <div className="font-mono text-[10px] text-text-secondary truncate">
+                  <div className="font-mono text-[10px] text-text-secondary uppercase truncate">
                     {song.artist}
                   </div>
                 )}
@@ -189,6 +162,6 @@ export default function SongHistory() {
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

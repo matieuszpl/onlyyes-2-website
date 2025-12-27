@@ -115,17 +115,17 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
         )}
         {user ? (
-          <div className="relative overflow-hidden -mx-3 -my-3">
-            {/* Gradient background */}
-            <div
-              className="absolute inset-0 opacity-50"
-              style={{
-                background: user.featured_badge?.color
-                  ? `linear-gradient(135deg, ${user.featured_badge.color}15 0%, transparent 100%)`
-                  : "linear-gradient(135deg, rgba(0, 243, 255, 0.1) 0%, transparent 100%)",
-              }}
-            />
-
+          <div 
+            className="relative overflow-hidden -mx-3 -my-3 border-b"
+            style={{
+              borderColor: user.featured_badge?.color 
+                ? `${user.featured_badge.color}60` 
+                : "rgba(255, 255, 255, 0.05)",
+              background: user.featured_badge?.color
+                ? `linear-gradient(135deg, ${user.featured_badge.color}25 0%, ${user.featured_badge.color}10 50%, transparent 100%)`
+                : "linear-gradient(135deg, rgba(0, 243, 255, 0.15) 0%, rgba(0, 243, 255, 0.05) 50%, transparent 100%)",
+            }}
+          >
             <div className="relative p-3 space-y-3">
               {/* User header */}
               <div className="flex items-start gap-3">
@@ -179,12 +179,28 @@ export default function Sidebar({ isOpen, onClose }) {
 
                 {/* User info */}
                 <div className="flex-1 min-w-0 pt-0.5">
-                  <div className="font-header text-sm text-primary font-bold truncate mb-1">
+                  <div 
+                    className="font-header text-sm font-bold truncate mb-1"
+                    style={{
+                      color: user.featured_badge?.color || "var(--primary)",
+                    }}
+                  >
                     {user.username}
                   </div>
                   {user.rank && (
                     <div className="flex items-center gap-1.5 mb-1.5">
-                      <div className="font-mono text-[10px] text-primary bg-primary/20 px-1.5 py-0.5 rounded border border-primary/30">
+                      <div 
+                        className="font-mono text-[10px] px-1.5 py-0.5 rounded border"
+                        style={{
+                          color: user.featured_badge?.color || "var(--primary)",
+                          backgroundColor: user.featured_badge?.color 
+                            ? `${user.featured_badge.color}20` 
+                            : "rgba(0, 243, 255, 0.2)",
+                          borderColor: user.featured_badge?.color 
+                            ? `${user.featured_badge.color}50` 
+                            : "rgba(0, 243, 255, 0.3)",
+                        }}
+                      >
                         {user.rank.name}
                       </div>
                     </div>
@@ -225,8 +241,18 @@ export default function Sidebar({ isOpen, onClose }) {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
-                      <TrendingUpIcon size={10} className="text-accent-cyan" />
-                      <span className="font-mono text-[10px] text-accent-cyan font-bold">
+                      <TrendingUpIcon 
+                        size={10} 
+                        style={{
+                          color: user.featured_badge?.color || "var(--accent-cyan)",
+                        }}
+                      />
+                      <span 
+                        className="font-mono text-[10px] font-bold"
+                        style={{
+                          color: user.featured_badge?.color || "var(--accent-cyan)",
+                        }}
+                      >
                         {user.xp || 0} XP
                       </span>
                     </div>
@@ -260,8 +286,7 @@ export default function Sidebar({ isOpen, onClose }) {
                           transition={{ duration: 0.8, delay: 0.1 }}
                           className="h-full rounded-full"
                           style={{
-                            background:
-                              "linear-gradient(to right, var(--primary), var(--accent-cyan))",
+                            backgroundColor: user.featured_badge?.color || "var(--primary)",
                           }}
                         />
                       )}

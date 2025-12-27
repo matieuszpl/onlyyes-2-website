@@ -119,7 +119,8 @@ export default function DockedPlayer() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -10 }}
-                      className="absolute bottom-full right-0 mb-2 px-3 py-2 glass-panel rounded border border-white/10"
+                      as={Card}
+                      className="absolute bottom-full right-0 mb-2 px-3 py-2 rounded border border-white/10"
                     >
                       <input
                         type="range"

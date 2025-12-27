@@ -72,7 +72,7 @@ export default function ConnectionNotification() {
           exit={{ opacity: 0, y: 100 }}
           className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50"
         >
-          <div className="glass-panel border border-red-500/50 px-4 py-3 rounded-sm shadow-lg flex items-center gap-3 min-w-[280px]">
+          <Card className="border border-red-500/50 px-4 py-3 rounded-sm shadow-lg flex items-center gap-3 min-w-[280px]">
             {!isOnline ? (
               <WifiOff size={18} className="text-red-400 shrink-0" />
             ) : (
@@ -81,7 +81,7 @@ export default function ConnectionNotification() {
             <span className="font-mono text-xs text-text-primary">
               {errorMessage}
             </span>
-          </div>
+          </Card>
         </motion.div>
       )}
     </AnimatePresence>
