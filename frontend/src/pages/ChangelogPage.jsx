@@ -14,6 +14,7 @@ import { useUser } from "../contexts/UserContext";
 import api from "../api";
 import TextGlitch from "../components/TextGlitch";
 import Card from "../components/Card";
+import Button from "../components/Button";
 
 const categoryIcons = {
   "Nowe funkcjonalności": Sparkles,
@@ -33,12 +34,18 @@ const changelogData = [
   {
     date: "2025-12-27",
     entries: {
+      "Nowe funkcjonalności": [
+        "Dodano uniwersalny komponent przycisków",
+      ],
       "UI/UX": [
+        "Ujednolicono style przycisków w całej aplikacji",
+        "Ulepszono wygląd nagłówków stron",
+        "Ulepszono wygląd sidebaru",
+        "Ulepszono responsywność przycisków w trybie kiosk",
         "Ulepszono wygląd profilu użytkownika i komponentów profilu",
         "Ulepszono wygląd strony odznak",
         "Ulepszono wygląd rankingu użytkowników",
         "Ulepszono wygląd feedu aktywności",
-        "Ulepszono wygląd sidebaru i tooltipu użytkownika",
         "Ulepszono wygląd strony harmonogramu",
         "Ulepszono wyświetlanie historii XP i aktywności",
       ],
@@ -228,40 +235,15 @@ function IssueReportWidget() {
         )}
 
         <div className="flex gap-2">
-          <button
+          <Button
             type="submit"
             disabled={submitting || !title.trim()}
-            className={`flex-1 px-4 py-2 font-mono text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all border shadow-lg ${
-              issueType === "FEATURE"
-                ? "border-accent-cyan text-accent-cyan bg-[rgba(0,243,255,0.2)]"
-                : "border-accent-magenta text-accent-magenta bg-[rgba(255,0,255,0.2)]"
-            }`}
-            style={
-              issueType === "FEATURE"
-                ? {
-                    boxShadow: "0 10px 15px -3px rgba(0, 243, 255, 0.2), 0 4px 6px -2px rgba(0, 243, 255, 0.2)",
-                  }
-                : {
-                    boxShadow: "0 10px 15px -3px rgba(255, 0, 255, 0.2), 0 4px 6px -2px rgba(255, 0, 255, 0.2)",
-                  }
-            }
-            onMouseEnter={(e) => {
-              if (issueType === "FEATURE") {
-                e.target.style.boxShadow = "0 10px 15px -3px rgba(0, 243, 255, 0.4), 0 4px 6px -2px rgba(0, 243, 255, 0.4)";
-              } else {
-                e.target.style.boxShadow = "0 10px 15px -3px rgba(255, 0, 255, 0.4), 0 4px 6px -2px rgba(255, 0, 255, 0.4)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (issueType === "FEATURE") {
-                e.target.style.boxShadow = "0 10px 15px -3px rgba(0, 243, 255, 0.2), 0 4px 6px -2px rgba(0, 243, 255, 0.2)";
-              } else {
-                e.target.style.boxShadow = "0 10px 15px -3px rgba(255, 0, 255, 0.2), 0 4px 6px -2px rgba(255, 0, 255, 0.2)";
-              }
-            }}
+            variant={issueType === "FEATURE" ? "cyan" : "magenta"}
+            size="md"
+            fullWidth
           >
             {submitting ? "WYSYŁANIE..." : "WYŚLIJ"}
-          </button>
+          </Button>
         </div>
 
         {!user && (
@@ -277,26 +259,11 @@ function IssueReportWidget() {
 export default function ChangelogPage() {
   return (
     <div className="space-y-6">
-      <div className="flex flex-col items-center justify-center mb-6">
-        <div className="font-brand text-3xl md:text-4xl text-primary tracking-wider">
-          <TextGlitch
-            text="ONLY YES"
-            altTexts={[
-              "ONLY YES",
-              "0NLY Y3S",
-              "0NL¥ ¥3$",
-              "0N1Y Y35",
-              "#+:|* {&><@$?",
-            ]}
-            className="font-brand"
-          />
-        </div>
-      </div>
 
-      <div className="flex items-center gap-3 mb-8">
-        <GitBranch className="text-primary" size={32} />
+      <div className="flex items-start gap-3 mb-8">
+        <GitBranch className="text-primary shrink-0" size={56} />
         <div>
-          <h1 className="font-header text-4xl text-primary uppercase tracking-wider mb-2">
+          <h1 className="font-header text-4xl text-primary uppercase tracking-wider mb-0.5">
             CHANGELOG
           </h1>
           <p className="font-mono text-sm text-text-secondary">

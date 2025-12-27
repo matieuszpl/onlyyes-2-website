@@ -8,6 +8,7 @@ import TextGlitch from "../TextGlitch";
 import ImageGlitch from "../ImageGlitch";
 import ActiveListenersWidget from "../ActiveListenersWidget";
 import Card from "../Card";
+import Button from "../Button";
 import { Play, Pause, Home, ChevronLeft } from "lucide-react";
 import { useAlbumColors } from "../../hooks/useAlbumColors";
 
@@ -165,12 +166,14 @@ export default function KioskLayout() {
         <div className="flex-1 flex flex-col lg:hidden min-h-0 kiosk-portrait-layout">
           {/* Header */}
           <div className="flex items-center justify-between p-3 sm:p-4 shrink-0">
-            <button
+            <Button
               onClick={() => navigate("/")}
-              className="btn-cut bg-white/10 text-text-secondary hover:bg-primary hover:text-black px-2 sm:px-3 py-1.5 sm:py-2 font-mono text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 transition-all"
+              variant="default"
+              size="sm"
+              className="flex items-center gap-1.5 sm:gap-2"
             >
               <ChevronLeft size={16} className="sm:w-5 sm:h-5" />
-            </button>
+            </Button>
             <div className="font-brand text-xl sm:text-2xl text-primary tracking-wider">
               <TextGlitch
                 text="ONLY YES"
@@ -240,9 +243,12 @@ export default function KioskLayout() {
 
           {/* Controls - Full Width */}
           <div className="px-3 sm:px-4 pb-3 sm:pb-4 shrink-0 kiosk-controls">
-            <button
+            <Button
               onClick={togglePlay}
-              className="btn-cut w-full py-2 sm:py-2.5 md:py-3 font-mono text-xs sm:text-sm font-bold flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-3 transition-all kiosk-play-button"
+              variant={isPlaying ? "cyan" : "default"}
+              size="md"
+              fullWidth
+              className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-3 kiosk-play-button"
             >
               {isPlaying ? (
                 <>
@@ -255,7 +261,7 @@ export default function KioskLayout() {
                   <span>ODTWÓRZ</span>
                 </>
               )}
-            </button>
+            </Button>
             <div className="flex items-center gap-1.5 sm:gap-2 w-full">
               <span className="font-mono text-[10px] sm:text-xs text-text-secondary">
                 VOL
@@ -344,13 +350,15 @@ export default function KioskLayout() {
           <div className="flex-1 flex flex-col p-5 min-h-0">
             {/* ONLY YES Brand Header */}
             <div className="flex items-center justify-center pt-6 pb-4 relative shrink-0">
-              <button
+              <Button
                 onClick={() => navigate("/")}
-                className="absolute left-5 top-6 btn-cut bg-white/10 text-text-secondary hover:bg-primary hover:text-black px-4 py-2 font-mono text-sm font-bold flex items-center gap-2 transition-all"
+                variant="default"
+                size="md"
+                className="absolute left-5 top-6 flex items-center gap-2"
               >
                 <Home size={18} />
                 GŁÓWNA
-              </button>
+              </Button>
               <div className="font-brand text-5xl lg:text-6xl text-primary tracking-wider">
                 <TextGlitch
                   text="ONLY YES"
@@ -419,9 +427,11 @@ export default function KioskLayout() {
 
             {/* Controls - Bottom */}
             <div className="flex flex-col items-center gap-4 w-full max-w-md mx-auto pb-6">
-              <button
+              <Button
                 onClick={togglePlay}
-                className="btn-cut bg-primary text-white px-12 py-4 font-mono text-base font-bold flex items-center gap-4 shadow-[0_0_20px_rgba(var(--primary-rgb),0.5)]"
+                variant={isPlaying ? "cyan" : "primary"}
+                size="xl"
+                className="flex items-center gap-4 kiosk-play-button"
               >
                 {isPlaying ? (
                   <>
@@ -434,7 +444,7 @@ export default function KioskLayout() {
                     <span>ODTWÓRZ</span>
                   </>
                 )}
-              </button>
+              </Button>
               <div className="flex items-center gap-2 w-full">
                 <span className="font-mono text-sm text-text-secondary">
                   VOL

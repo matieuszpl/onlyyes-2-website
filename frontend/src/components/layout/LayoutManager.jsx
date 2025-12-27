@@ -19,7 +19,7 @@ export default function LayoutManager({ children }) {
   return (
     <div className="min-h-screen flex">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="flex-1 md:ml-56 pb-32 md:pb-24 w-full max-w-full overflow-x-hidden">
+      <main className="flex-1 md:ml-64 pb-32 md:pb-24 w-full max-w-full overflow-x-hidden">
         <AnimatePresence key={location.pathname}>
           <motion.div
             key={location.pathname}

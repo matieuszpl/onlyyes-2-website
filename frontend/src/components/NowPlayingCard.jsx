@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { useGlobalAudio } from "../contexts/GlobalAudioContext";
 import TextGlitch from "./TextGlitch";
 import ImageGlitch from "./ImageGlitch";
+import Button from "./Button";
+import Card from "./Card";
 import { Play, Pause, Heart, HeartOff } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAlbumColors } from "../hooks/useAlbumColors";
@@ -98,13 +100,16 @@ export default function NowPlayingCard() {
               {nowPlaying.artist}
             </p>
             <div className="flex items-center gap-3">
-              <button
+              <Button
                 onClick={togglePlay}
-                className="btn-cut bg-primary text-black px-6 py-2 font-mono text-sm font-bold flex items-center gap-2"
+                variant={isPlaying ? "cyan" : "primary"}
+                size="md"
+                className={isPlaying ? "" : "bg-primary text-black"}
+                style={isPlaying ? {} : undefined}
               >
                 {isPlaying ? <Pause size={16} /> : <Play size={16} />}
                 {isPlaying ? "STOP" : "PLAY"}
-              </button>
+              </Button>
               <button
                 onClick={() => setLiked(!liked)}
                 className={liked ? "text-accent-magenta" : "text-text-secondary hover:text-accent-magenta"}

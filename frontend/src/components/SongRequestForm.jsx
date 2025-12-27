@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useUser } from "../contexts/UserContext";
 import api from "../api";
 import Card from "./Card";
+import Button from "./Button";
 
 export default function SongRequestForm() {
   const { user } = useUser();
@@ -73,13 +74,15 @@ export default function SongRequestForm() {
           placeholder="Wklej link YouTube/Spotify lub wpisz tytuł..."
           className="flex-1 bg-white/10 border border-white/10 px-4 py-2 font-mono text-sm text-text-primary placeholder:text-text-secondary focus:border-primary focus:outline-none"
         />
-        <button
+        <Button
           onClick={handlePreview}
           disabled={loading || !input.trim()}
-          className="btn-cut bg-primary text-black px-6 py-2 font-mono text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+          variant="primary"
+          size="md"
+          className="bg-primary text-black"
         >
           {loading ? "..." : "PODGLĄD"}
-        </button>
+        </Button>
       </div>
 
       {preview && (
@@ -106,13 +109,15 @@ export default function SongRequestForm() {
               </div>
             </div>
           </div>
-          <button
+          <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className="btn-cut bg-primary text-black px-6 py-2 font-mono text-sm font-bold disabled:opacity-50"
+            variant="primary"
+            size="md"
+            className="bg-primary text-black"
           >
             {submitting ? "WYSYŁANIE..." : "WYŚLIJ PROPOZYCJĘ"}
-          </button>
+          </Button>
         </Card>
       )}
     </Card>

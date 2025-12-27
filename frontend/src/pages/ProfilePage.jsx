@@ -1,6 +1,5 @@
 import { useUser } from "../contexts/UserContext";
 import { Award, History, Activity } from "lucide-react";
-import TextGlitch from "../components/TextGlitch";
 import ProfileHeader from "../components/profile/ProfileHeader";
 import ProfileOverview from "../components/profile/ProfileOverview";
 import XpHistory from "../components/profile/XpHistory";
@@ -25,22 +24,6 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-8" data-profile-design="1">
-      <div className="flex flex-col items-center justify-center mb-6">
-        <div className="font-brand text-3xl md:text-4xl text-primary tracking-wider">
-          <TextGlitch
-            text="ONLY YES"
-            altTexts={[
-              "ONLY YES",
-              "0NLY Y3S",
-              "0NL¥ ¥3$",
-              "0N1Y Y35",
-              "#+:|* {&><@$?",
-            ]}
-            className="font-brand"
-          />
-        </div>
-      </div>
-
       <ProfileHeader />
 
       <div className="space-y-8">

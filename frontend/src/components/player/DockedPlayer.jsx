@@ -2,6 +2,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useGlobalAudio } from "../../contexts/GlobalAudioContext";
 import VoteButtons from "../VoteButtons";
 import ImageGlitch from "../ImageGlitch";
+import Button from "../Button";
+import Card from "../Card";
 import { Play, Pause, Volume2, VolumeX } from "lucide-react";
 import { useState } from "react";
 import { useAlbumColors } from "../../hooks/useAlbumColors";
@@ -84,9 +86,11 @@ export default function DockedPlayer() {
 
             {/* Center: Play Controls */}
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-              <button
+              <Button
                 onClick={togglePlay}
-                className="btn-cut bg-white/10 text-text-secondary px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 font-mono text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-primary hover:text-black"
+                variant={isPlaying ? "cyan" : "default"}
+                size="sm"
+                className="flex items-center gap-2"
                 aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
@@ -100,7 +104,7 @@ export default function DockedPlayer() {
                     <span className="hidden sm:inline">PLAY</span>
                   </>
                 )}
-              </button>
+              </Button>
             </div>
 
             {/* Right: Volume */}

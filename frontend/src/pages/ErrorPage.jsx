@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Home, AlertCircle, Server, FileQuestion } from "lucide-react";
 import TextGlitch from "../components/TextGlitch";
 import Card from "../components/Card";
+import Button from "../components/Button";
 
 const errorMessages = {
   404: {
@@ -98,15 +99,15 @@ export default function ErrorPage() {
               transition={{ delay: 0.5 }}
               className="pt-4"
             >
-              <motion.button
+              <Button
                 onClick={() => navigate("/")}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="btn-cut flex items-center gap-2 px-8 py-3 bg-primary text-bg-primary font-mono text-sm uppercase tracking-wider"
+                variant="primary"
+                size="lg"
+                className="flex items-center gap-2 bg-primary text-bg-primary"
               >
                 <Home size={20} />
                 Wróć do strony głównej
-              </motion.button>
+              </Button>
             </motion.div>
           </div>
         </Card>

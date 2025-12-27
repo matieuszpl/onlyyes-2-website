@@ -3,6 +3,8 @@ import { useGlobalAudio } from "../contexts/GlobalAudioContext";
 import { useUser } from "../contexts/UserContext";
 import { useState } from "react";
 import PageHeader from "../components/layout/PageHeader";
+import Card from "../components/Card";
+import Button from "../components/Button";
 
 export default function SettingsPage() {
   const { volume, setVolume, triggerGlitch } = useGlobalAudio();
@@ -59,32 +61,38 @@ export default function SettingsPage() {
               </div>
               {user.is_admin && (
                 <div className="space-y-2">
-                  <button
+                  <Button
                     onClick={() => {
                       triggerGlitch();
                       setTestGlitch(true);
                       setTimeout(() => setTestGlitch(false), 400);
                     }}
-                    className="btn-cut bg-accent-magenta text-white px-6 py-2 font-mono text-sm font-bold"
+                    variant="magenta"
+                    size="md"
+                    className="bg-accent-magenta text-white"
                   >
                     TESTUJ ANIMACJĘ GLITCH
-                  </button>
+                  </Button>
                 </div>
               )}
-              <button
+              <Button
                 onClick={logout}
-                className="btn-cut bg-secondary text-white px-6 py-2 font-mono text-sm font-bold"
+                variant="default"
+                size="md"
+                className="bg-secondary text-white"
               >
                 WYLOGUJ
-              </button>
+              </Button>
             </div>
           ) : (
-            <button
+            <Button
               onClick={login}
-              className="btn-cut bg-primary text-black px-6 py-2 font-mono text-sm font-bold"
+              variant="primary"
+              size="md"
+              className="bg-primary text-black"
             >
               ZALOGUJ PRZEZ DISCORD
-            </button>
+            </Button>
           )}
         </div>
       </Card>

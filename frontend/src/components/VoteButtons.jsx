@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useUser } from "../contexts/UserContext";
 import { useGlobalAudio } from "../contexts/GlobalAudioContext";
 import { useToast } from "./ToastContainer";
+import Button from "./Button";
 import api from "../api";
 
 export default function VoteButtons({ songId, size = "normal" }) {
@@ -94,23 +95,23 @@ export default function VoteButtons({ songId, size = "normal" }) {
   };
 
   const isLarge = size === "large";
-  const buttonClasses = isLarge
-    ? "btn-cut px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 font-mono text-xs sm:text-sm md:text-base font-bold transition-all"
-    : "btn-cut px-2 sm:px-3 py-1 sm:py-1.5 font-mono text-[9px] sm:text-[10px] font-bold transition-all";
   const containerClasses = isLarge
     ? "flex flex-col sm:flex-row gap-2 sm:gap-3 shrink-0"
-    : "flex flex-col gap-1 sm:gap-1.5 shrink-0";
+    : "flex flex-col sm:flex-row gap-1 sm:gap-1.5 shrink-0";
+  const buttonSize = isLarge ? "lg" : "sm";
 
   if (hasVoted && vote === "LIKE") {
     return (
       <div className={isLarge ? "flex gap-3" : "flex flex-col gap-2"}>
-        <button
+        <Button
           onClick={handleResetVote}
           disabled={loading}
-          className={`${buttonClasses} bg-green-500 text-white hover:bg-green-600`}
+          variant="green"
+          size={buttonSize}
+          className="bg-green-500 text-white hover:bg-green-600 hover:text-white"
         >
           ✓ LUBISZ TĄ PIOSENKĘ
-        </button>
+        </Button>
       </div>
     );
   }
@@ -118,33 +119,37 @@ export default function VoteButtons({ songId, size = "normal" }) {
   if (hasVoted && vote === "DISLIKE") {
     return (
       <div className={isLarge ? "flex gap-3" : "flex flex-col gap-2"}>
-        <button
+        <Button
           onClick={handleResetVote}
           disabled={loading}
-          className={`${buttonClasses} bg-red-500 text-white hover:bg-red-600`}
+          variant="red"
+          size={buttonSize}
+          className="bg-red-500 text-white hover:bg-red-600 hover:text-white"
         >
           ✗ NIE LUBISZ TEGO UTWORU
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
     <div className={containerClasses}>
-      <button
+      <Button
         onClick={() => handleVote("LIKE")}
         disabled={loading}
-        className={`${buttonClasses} vote-btn bg-white/10 text-text-secondary border border-green-500/50 shadow-[0_0_10px_rgba(34,197,94,0.4)] hover:bg-green-500 hover:text-white hover:border-green-500 hover:shadow-[0_0_15px_rgba(34,197,94,0.6)] transition-all`}
+        variant="green"
+        size={buttonSize}
       >
         ↑ LUBIĘ
-      </button>
-      <button
+      </Button>
+      <Button
         onClick={() => handleVote("DISLIKE")}
         disabled={loading}
-        className={`${buttonClasses} vote-btn bg-white/10 text-text-secondary border border-red-500/50 shadow-[0_0_10px_rgba(239,68,68,0.4)] hover:bg-red-500 hover:text-white hover:border-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.6)] transition-all`}
+        variant="red"
+        size={buttonSize}
       >
         ↓ NIE LUBIĘ
-      </button>
+      </Button>
     </div>
   );
 }

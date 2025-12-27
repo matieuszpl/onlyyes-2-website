@@ -25,6 +25,7 @@ import ThemeDropdown from "../ThemeDropdown";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { getIconComponent } from "../../utils/badgeIcons";
+import TextGlitch from "../TextGlitch";
 
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
@@ -114,12 +115,40 @@ export default function Sidebar({ isOpen, onClose }) {
             </button>
           </div>
         )}
+        <AnimatePresence mode="wait">
+          {location.pathname !== "/" && (
+            <motion.div
+              key="only-yes-header"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col items-center justify-center mb-4"
+            >
+              <div className="font-brand text-xl md:text-3xl text-primary tracking-wider p-4">
+                <TextGlitch
+                  text="ONLY YES"
+                  altTexts={[
+                    "ONLY YES",
+                    "0NLY Y3S",
+                    "0NL¥ ¥3$",
+                    "0N1Y Y35",
+                    "#+:|* {&><@$?",
+                  ]}
+                  className="font-brand"
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {user ? (
-          <div 
-            className="relative overflow-hidden -mx-3 -my-3 border-b"
+          <div
+            className={`relative overflow-hidden -mx-3 -my-3 border-b ${
+              location.pathname !== "/" ? "border-t" : ""
+            }`}
             style={{
-              borderColor: user.featured_badge?.color 
-                ? `${user.featured_badge.color}60` 
+              borderColor: user.featured_badge?.color
+                ? `${user.featured_badge.color}60`
                 : "rgba(255, 255, 255, 0.05)",
               background: user.featured_badge?.color
                 ? `linear-gradient(135deg, ${user.featured_badge.color}25 0%, ${user.featured_badge.color}10 50%, transparent 100%)`
@@ -179,7 +208,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
                 {/* User info */}
                 <div className="flex-1 min-w-0 pt-0.5">
-                  <div 
+                  <div
                     className="font-header text-sm font-bold truncate mb-1"
                     style={{
                       color: user.featured_badge?.color || "var(--primary)",
@@ -189,15 +218,15 @@ export default function Sidebar({ isOpen, onClose }) {
                   </div>
                   {user.rank && (
                     <div className="flex items-center gap-1.5 mb-1.5">
-                      <div 
+                      <div
                         className="font-mono text-[10px] px-1.5 py-0.5 rounded border"
                         style={{
                           color: user.featured_badge?.color || "var(--primary)",
-                          backgroundColor: user.featured_badge?.color 
-                            ? `${user.featured_badge.color}20` 
+                          backgroundColor: user.featured_badge?.color
+                            ? `${user.featured_badge.color}20`
                             : "rgba(0, 243, 255, 0.2)",
-                          borderColor: user.featured_badge?.color 
-                            ? `${user.featured_badge.color}50` 
+                          borderColor: user.featured_badge?.color
+                            ? `${user.featured_badge.color}50`
                             : "rgba(0, 243, 255, 0.3)",
                         }}
                       >
@@ -241,16 +270,18 @@ export default function Sidebar({ isOpen, onClose }) {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
-                      <TrendingUpIcon 
-                        size={10} 
+                      <TrendingUpIcon
+                        size={10}
                         style={{
-                          color: user.featured_badge?.color || "var(--accent-cyan)",
+                          color:
+                            user.featured_badge?.color || "var(--accent-cyan)",
                         }}
                       />
-                      <span 
+                      <span
                         className="font-mono text-[10px] font-bold"
                         style={{
-                          color: user.featured_badge?.color || "var(--accent-cyan)",
+                          color:
+                            user.featured_badge?.color || "var(--accent-cyan)",
                         }}
                       >
                         {user.xp || 0} XP
@@ -286,7 +317,8 @@ export default function Sidebar({ isOpen, onClose }) {
                           transition={{ duration: 0.8, delay: 0.1 }}
                           className="h-full rounded-full"
                           style={{
-                            backgroundColor: user.featured_badge?.color || "var(--primary)",
+                            backgroundColor:
+                              user.featured_badge?.color || "var(--primary)",
                           }}
                         />
                       )}
@@ -406,7 +438,7 @@ export default function Sidebar({ isOpen, onClose }) {
           )}
         </AnimatePresence>
       )}
-      <aside className="hidden md:flex fixed left-0 top-0 h-full w-56 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col z-30">
+      <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col z-30">
         {sidebarContent}
       </aside>
     </>

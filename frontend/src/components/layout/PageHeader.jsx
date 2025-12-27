@@ -12,7 +12,6 @@ import {
   GitBranch,
   Award,
 } from "lucide-react";
-import TextGlitch from "../TextGlitch";
 
 const routeIcons = {
   "/": Home,
@@ -50,25 +49,10 @@ export default function PageHeader({ title, icon, subtitle }) {
 
   return (
     <div className="mb-8">
-      <div className="flex flex-col items-center justify-center mb-6">
-        <div className="font-brand text-3xl md:text-4xl text-primary tracking-wider">
-          <TextGlitch
-            text="ONLY YES"
-            altTexts={[
-              "ONLY YES",
-              "0NLY Y3S",
-              "0NL¥ ¥3$",
-              "0N1Y Y35",
-              "#+:|* {&><@$?",
-            ]}
-            className="font-brand"
-          />
-        </div>
-      </div>
-      <div className="flex items-center gap-3">
-        {Icon && <Icon className="text-primary" size={32} />}
+      <div className="flex items-start gap-3">
+        {Icon && <Icon className="text-primary shrink-0" size={56} />}
         <div>
-          <h1 className="font-header text-4xl text-primary uppercase tracking-wider mb-2">
+          <h1 className="font-header text-4xl text-primary uppercase tracking-wider mb-0.5">
             {pageTitle}
           </h1>
           {pageSubtitle && (

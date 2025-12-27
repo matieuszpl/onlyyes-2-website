@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Copy, Check } from "lucide-react";
 import api from "../api";
+import Button from "./Button";
 import { cn } from "../utils/cn";
 
 export default function CopyStreamButton() {
@@ -33,27 +34,24 @@ export default function CopyStreamButton() {
   };
 
   return (
-    <button
+    <Button
       onClick={handleCopy}
-      className={cn(
-        "btn-cut px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 font-mono text-[10px] sm:text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 transition-all",
-        copied
-          ? "bg-primary text-black"
-          : "bg-white/10 text-text-secondary hover:bg-primary hover:text-black"
-      )}
+      variant={copied ? "cyan" : "default"}
+      size="md"
+      className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-4 py-2.5 sm:px-5 sm:py-2.5"
       title={streamUrl || "Kopiuj stream URL"}
     >
       {copied ? (
         <>
-          <Check size={12} className="sm:w-4 sm:h-4" />
-          <span className="hidden sm:inline">SKOPIOWANO</span>
+          <Check size={16} className="sm:w-4 sm:h-4" />
+          <span>SKOPIOWANO</span>
         </>
       ) : (
         <>
-          <Copy size={12} className="sm:w-4 sm:h-4" />
-          <span className="hidden sm:inline">STREAM</span>
+          <Copy size={16} className="sm:w-4 sm:h-4" />
+          <span>STREAM</span>
         </>
       )}
-    </button>
+    </Button>
   );
 }

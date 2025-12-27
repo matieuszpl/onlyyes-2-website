@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { useUser } from "../contexts/UserContext";
 import { LogOut, LogIn } from "lucide-react";
+import Card from "./Card";
+import Button from "./Button";
 
 export default function Navbar() {
   const { user, loading, login, logout } = useUser();
@@ -45,22 +47,26 @@ export default function Navbar() {
                   )}
                   <span className="font-mono text-sm text-text-primary">{user.username}</span>
                 </div>
-                <button
+                <Button
                   onClick={logout}
-                  className="btn-cut bg-primary/20 hover:bg-primary text-black px-4 py-2 font-mono text-xs font-bold flex items-center gap-2"
+                  variant="default"
+                  size="sm"
+                  className="bg-primary/20 hover:bg-primary text-black flex items-center gap-2"
                 >
                   <LogOut size={14} />
                   WYLOGUJ
-                </button>
+                </Button>
               </div>
             ) : (
-              <button
+              <Button
                 onClick={login}
-                className="btn-cut bg-primary text-black px-4 py-2 font-mono text-xs font-bold flex items-center gap-2"
+                variant="primary"
+                size="sm"
+                className="bg-primary text-black flex items-center gap-2"
               >
                 <LogIn size={14} />
                 ZALOGUJ
-              </button>
+              </Button>
             )}
           </div>
         </div>

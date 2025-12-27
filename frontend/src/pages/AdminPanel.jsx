@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import api from "../api";
 import Card from "../components/Card";
+import Button from "../components/Button";
 import {
   Users,
   ThumbsUp,
@@ -404,18 +405,22 @@ export default function AdminPanel() {
 
                       {suggestion.status === "PENDING" && (
                         <div className="flex gap-2 mt-4">
-                          <button
+                          <Button
                             onClick={() => handleApprove(suggestion.id)}
-                            className="btn-cut bg-primary text-black px-4 py-2 font-mono text-xs font-bold"
+                            variant="primary"
+                            size="sm"
+                            className="bg-primary text-black"
                           >
                             ZATWIERDŹ
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => handleReject(suggestion.id)}
-                            className="btn-cut bg-secondary text-white px-4 py-2 font-mono text-xs font-bold"
+                            variant="default"
+                            size="sm"
+                            className="bg-secondary text-white"
                           >
                             ODRZUĆ
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </Card>
@@ -507,18 +512,22 @@ export default function AdminPanel() {
 
                       {issue.status === "PENDING" && (
                         <div className="flex gap-2 mt-4">
-                          <button
+                          <Button
                             onClick={() => handleApproveIssue(issue.id)}
-                            className="btn-cut bg-primary text-black px-4 py-2 font-mono text-xs font-bold"
+                            variant="primary"
+                            size="sm"
+                            className="bg-primary text-black"
                           >
                             ZATWIERDŹ
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => handleRejectIssue(issue.id)}
-                            className="btn-cut bg-secondary text-white px-4 py-2 font-mono text-xs font-bold"
+                            variant="default"
+                            size="sm"
+                            className="bg-secondary text-white"
                           >
                             ODRZUĆ
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </Card>
@@ -538,12 +547,14 @@ export default function AdminPanel() {
                 <div className="font-mono text-xs text-text-secondary">
                   ŁĄCZNIE: {badges.length} osiągnięć
                 </div>
-                <button
+                <Button
                   onClick={() => setShowCreateBadge(!showCreateBadge)}
-                  className="btn-cut bg-primary text-black px-4 py-2 font-mono text-xs font-bold"
+                  variant="primary"
+                  size="sm"
+                  className="bg-primary text-black"
                 >
                   {showCreateBadge ? "ANULUJ" : "NOWE OSIĄGNIĘCIE"}
-                </button>
+                </Button>
               </div>
 
               {showCreateBadge && (
@@ -604,12 +615,14 @@ export default function AdminPanel() {
                       min="0"
                     />
                   </div>
-                  <button
+                  <Button
                     onClick={handleCreateBadge}
-                    className="btn-cut bg-primary text-black px-4 py-2 font-mono text-xs font-bold"
+                    variant="primary"
+                    size="sm"
+                    className="bg-primary text-black"
                   >
                     UTWÓRZ
-                  </button>
+                  </Button>
                 </Card>
               )}
 
@@ -655,12 +668,14 @@ export default function AdminPanel() {
                             </div>
                           )}
                         </div>
-                        <button
+                        <Button
                           onClick={() => openAwardModal(badge)}
-                          className="btn-cut bg-primary text-black px-4 py-2 font-mono text-xs font-bold whitespace-nowrap"
+                          variant="primary"
+                          size="sm"
+                          className="bg-primary text-black whitespace-nowrap"
                         >
                           NADAJ
-                        </button>
+                        </Button>
                       </Card>
                     ))
                   )}
@@ -731,23 +746,26 @@ export default function AdminPanel() {
                         </select>
                       </div>
                       <div className="flex gap-2">
-                        <button
+                        <Button
                           onClick={handleAwardBadge}
                           disabled={!selectedUser}
-                          className="btn-cut bg-primary text-black px-4 py-2 font-mono text-xs font-bold flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                          variant="primary"
+                          size="sm"
+                          className="bg-primary text-black flex-1"
                         >
                           POTWIERDŹ
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           onClick={() => {
                             setShowAwardModal(false);
                             setSelectedBadge(null);
                             setSelectedUser(null);
                           }}
-                          className="btn-cut bg-white/10 text-text-primary px-4 py-2 font-mono text-xs font-bold"
+                          variant="default"
+                          size="sm"
                         >
                           ANULUJ
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </Card>

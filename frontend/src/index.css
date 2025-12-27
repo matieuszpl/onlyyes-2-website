@@ -381,7 +381,7 @@ body::before {
   transition: all 0.2s ease;
 }
 
-.btn-cut:hover:not(.vote-btn) {
+.btn-cut:hover:not(.vote-btn):not(.button-component) {
   background-color: var(--primary);
   color: #000;
   box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
@@ -1267,6 +1267,42 @@ body::before {
 
 .kiosk-portrait-layout .kiosk-controls button:hover {
   background-color: rgba(var(--primary-rgb), 0.9) !important;
+  box-shadow: 0 0 25px rgba(var(--primary-rgb), 0.7) !important;
+}
+
+/* Kiosk Layout - Button hover improvements */
+.kiosk-controls .button-component:hover,
+.kiosk-play-button.button-component:hover,
+.kiosk-main-content .button-component:hover {
+  transform: scale(1.02) !important;
+  transition: all 0.2s ease !important;
+}
+
+.kiosk-controls .button-component[data-variant="cyan"]:hover,
+.kiosk-play-button.button-component[data-variant="cyan"]:hover,
+.kiosk-main-content .button-component[data-variant="cyan"]:hover {
+  background-color: rgba(0, 243, 255, 0.3) !important;
+  border-color: rgba(0, 243, 255, 0.8) !important;
+  box-shadow: 0 10px 20px -3px rgba(0, 243, 255, 0.3), 0 4px 6px -2px rgba(0, 243, 255, 0.3) !important;
+  color: rgba(0, 243, 255, 1) !important;
+}
+
+.kiosk-controls .button-component[data-variant="default"]:hover,
+.kiosk-play-button.button-component[data-variant="default"]:hover,
+.kiosk-main-content .button-component[data-variant="default"]:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 10px 20px -3px rgba(255, 255, 255, 0.2), 0 4px 6px -2px rgba(255, 255, 255, 0.2) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.kiosk-controls .button-component[data-variant="primary"]:hover,
+.kiosk-play-button.button-component[data-variant="primary"]:hover,
+.kiosk-main-content .button-component[data-variant="primary"]:hover {
+  background-color: rgba(var(--primary-rgb), 0.9) !important;
+  color: #000000 !important;
+  box-shadow: 0 10px 20px -3px rgba(var(--primary-rgb), 0.4), 0 4px 6px -2px rgba(var(--primary-rgb), 0.4) !important;
+  border-color: rgba(var(--primary-rgb), 0.8) !important;
 }
 
 /* Kiosk Layout - Portrait mode album art */

@@ -7,6 +7,7 @@ import ActiveListenersWidget from "../ActiveListenersWidget";
 import TextGlitch from "../TextGlitch";
 import ImageGlitch from "../ImageGlitch";
 import Card from "../Card";
+import Button from "../Button";
 import { Play, Pause, Music2, Radio } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAlbumColors } from "../../hooks/useAlbumColors";
@@ -158,23 +159,27 @@ export default function HeroPlayer() {
             </div>
             <div className="space-y-2 mb-1.5 sm:mb-2">
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <button
+                <Button
                   onClick={togglePlay}
-                  className="btn-cut bg-white/10 text-text-secondary px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 font-mono text-[10px] sm:text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 hover:bg-primary hover:text-black"
+                  variant={isPlaying ? "cyan" : "default"}
+                  size="md"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-4 py-2.5 sm:px-5 sm:py-2.5"
                 >
                   {isPlaying ? (
                     <>
-                      <Pause size={12} className="sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">STOP</span>
+                      <Pause size={16} className="sm:w-4 sm:h-4" />
+                      <span>STOP</span>
                     </>
                   ) : (
                     <>
-                      <Play size={12} className="sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">PLAY</span>
+                      <Play size={16} className="sm:w-4 sm:h-4" />
+                      <span>PLAY</span>
                     </>
                   )}
-                </button>
-                <CopyStreamButton />
+                </Button>
+                <div className="flex-1 sm:flex-initial">
+                  <CopyStreamButton />
+                </div>
                 <div className="hidden sm:block">
                   <ActiveListenersWidget compact={true} />
                 </div>
