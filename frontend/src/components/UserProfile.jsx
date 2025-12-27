@@ -113,13 +113,13 @@ export default function UserProfile() {
         {user.avatar && (
           <img
             src={user.avatar}
-            alt={user.username}
+            alt={user.display_name || user.username}
             className="w-16 h-16 border-2 border-primary"
           />
         )}
         <div className="flex-1">
           <h3 className="font-header text-base text-primary uppercase tracking-wider">
-            {user.username}
+            {user.display_name || user.username}
           </h3>
           {user.rank && (
             <>

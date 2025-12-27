@@ -1,6 +1,7 @@
 import { useUser } from "../contexts/UserContext";
-import { Award, History, Activity } from "lucide-react";
+import { Award, History, Activity, User, Settings } from "lucide-react";
 import ProfileHeader from "../components/profile/ProfileHeader";
+import ProfileAccountSettings from "../components/profile/ProfileAccountSettings";
 import ProfileSettings from "../components/profile/ProfileSettings";
 import ProfileOverview from "../components/profile/ProfileOverview";
 import XpHistory from "../components/profile/XpHistory";
@@ -29,7 +30,23 @@ export default function ProfilePage() {
       <ProfileHeader />
 
       <div className="space-y-8">
-        <ProfileSettings />
+        <div>
+          <SectionHeader
+            icon={User}
+            title="KONTO"
+            className="mb-4"
+          />
+          <ProfileAccountSettings />
+        </div>
+
+        <div>
+          <SectionHeader
+            icon={Settings}
+            title="USTAWIENIA"
+            className="mb-4"
+          />
+          <ProfileSettings />
+        </div>
 
         <div>
           <SectionHeader

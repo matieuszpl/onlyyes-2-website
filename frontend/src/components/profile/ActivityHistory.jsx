@@ -118,14 +118,14 @@ export default function ActivityHistory() {
         <p className="font-mono text-xs text-text-secondary p-2">BRAK HISTORII</p>
       ) : (
         <div className="space-y-1.5">
-          {history.map((item) => {
+          {history.map((item, index) => {
             const Icon = getActivityIcon(item.type, item.vote_type);
             const color = getActivityColor(item.type, item.vote_type, item.status);
             const gradient = getActivityGradient(item.type, item.vote_type, item.status);
             const borderColor = getActivityBorderColor(item.type, item.vote_type, item.status);
             return (
               <div
-                key={item.id}
+                key={item.id ? `${item.id}-${index}` : `activity-${index}`}
                 className="flex items-center gap-3 p-2.5 bg-white/5 border border-white/10 relative overflow-hidden"
               >
                 <ActivityItemBackground thumbnail={item.thumbnail} type={item.type} voteType={item.vote_type} />

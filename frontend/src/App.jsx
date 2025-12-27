@@ -12,6 +12,7 @@ import { RadioEventsProvider } from "./contexts/RadioEventsContext";
 import { ToastProvider } from "./components/ToastContainer";
 import ConnectionNotification from "./components/ConnectionNotification";
 import BadgeNotifications from "./components/BadgeNotifications";
+import OAuthErrorHandler from "./components/OAuthErrorHandler";
 import LayoutManager from "./components/layout/LayoutManager";
 import KioskLayout from "./components/layout/KioskLayout";
 import AnimatedBackground from "./components/AnimatedBackground";
@@ -76,6 +77,7 @@ function App() {
                   </div>
                   <ConnectionNotification />
                   <BadgeNotifications />
+                  <OAuthErrorHandler />
                 </div>
               </BrowserRouter>
             </ToastProvider>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, Minus, Crown, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Crown, Loader2, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import ImageGlitch from "./ImageGlitch";
 import { useAlbumColors } from "../hooks/useAlbumColors";

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRadioEvents } from "../contexts/RadioEventsContext";
 import { WifiOff, Radio } from "lucide-react";
+import Card from "./Card";
 
 export default function ConnectionNotification() {
   const { isConnected } = useRadioEvents();

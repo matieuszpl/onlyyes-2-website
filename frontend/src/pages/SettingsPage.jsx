@@ -2,6 +2,7 @@ import ThemeSwitcher from "../components/ThemeSwitcher";
 import { useGlobalAudio } from "../contexts/GlobalAudioContext";
 import { useUser } from "../contexts/UserContext";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import SectionHeader from "../components/SectionHeader";
 import Card from "../components/Card";
 import Button from "../components/Button";
@@ -10,17 +11,31 @@ import api from "../api";
 export default function SettingsPage() {
   const { volume, setVolume, triggerGlitch } = useGlobalAudio();
   const { user, login, logout, refreshUser } = useUser();
+  const [searchParams] = useSearchParams();
   const [testGlitch, setTestGlitch] = useState(false);
   const [hideActivity, setHideActivity] = useState(false);
   const [hideActivityHistory, setHideActivityHistory] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [editingName, setEditingName] = useState(false);
+  const [nameError, setNameError] = useState("");
 
   useEffect(() => {
     if (user) {
       setHideActivity(user.hide_activity || false);
       setHideActivityHistory(user.hide_activity_history || false);
+      setDisplayName(user.display_name || user.username || "");
     }
   }, [user]);
+
+  useEffect(() => {
+    const connected = searchParams.get("connected");
+    if (connected) {
+      refreshUser();
+      searchParams.delete("connected");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [searchParams, refreshUser]);
 
   const handleHideActivityChange = async (value) => {
     if (!user) return;
@@ -48,6 +63,53 @@ export default function SettingsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDisplayNameSave = async () => {
+    if (!user) return;
+    setNameError("");
+    setSaving(true);
+    try {
+      await api.put("/users/me/display-name", { display_name: displayName });
+      setEditingName(false);
+      await refreshUser();
+    } catch (error) {
+      if (error.response?.data?.detail) {
+        setNameError(error.response.data.detail);
+      } else {
+        setNameError("Błąd podczas zapisywania nazwy");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAvatarChange = async (source) => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      await api.put("/users/me/avatar", { avatar_source: source });
+      await refreshUser();
+    } catch (error) {
+      console.error("Update avatar error:", error);
+      if (error.response?.data?.detail) {
+        alert(error.response.data.detail);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleConnectDiscord = () => {
+    window.location.href = "/api/auth/connect/discord";
+  };
+
+  const handleConnectGoogle = () => {
+    window.location.href = "/api/auth/connect/google";
+  };
+
+  const handleLoginGoogle = () => {
+    window.location.href = "/api/auth/login/google";
   };
 
   return (
@@ -130,22 +192,157 @@ export default function SettingsPage() {
         <div>
           <h2 className="font-header text-xl text-primary mb-4">KONTO</h2>
           {user ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex items-center gap-4">
                 {user.avatar && (
                   <img
                     src={user.avatar}
-                    alt={user.username}
-                    className="w-12 h-12 border border-primary"
+                    alt={user.display_name || user.username}
+                    className="w-12 h-12 border border-primary rounded"
                   />
                 )}
-                <div>
-                  <div className="font-mono text-sm text-text-primary">{user.username}</div>
-                  <div className="font-mono text-xs text-text-secondary">
-                    {user.is_admin ? "ADMIN" : "UŻYTKOWNIK"}
-                  </div>
+                <div className="flex-1">
+                  {editingName ? (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={displayName}
+                        onChange={(e) => {
+                          setDisplayName(e.target.value);
+                          setNameError("");
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleDisplayNameSave();
+                          if (e.key === "Escape") {
+                            setEditingName(false);
+                            setDisplayName(user.display_name || user.username || "");
+                            setNameError("");
+                          }
+                        }}
+                        className="w-full px-2 py-1 bg-white/10 border border-primary text-text-primary font-mono text-sm focus:outline-none focus:border-primary-alt"
+                        autoFocus
+                        maxLength={30}
+                      />
+                      {nameError && (
+                        <div className="font-mono text-xs text-red-400">{nameError}</div>
+                      )}
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleDisplayNameSave}
+                          variant="primary"
+                          size="sm"
+                          disabled={saving}
+                          className="bg-primary text-black"
+                        >
+                          ZAPISZ
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setEditingName(false);
+                            setDisplayName(user.display_name || user.username || "");
+                            setNameError("");
+                          }}
+                          variant="default"
+                          size="sm"
+                          className="bg-white/10 text-text-primary"
+                        >
+                          ANULUJ
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="font-mono text-sm text-text-primary">
+                        {user.display_name || user.username}
+                      </div>
+                      <div className="font-mono text-xs text-text-secondary">
+                        {user.is_admin ? "ADMIN" : "UŻYTKOWNIK"}
+                      </div>
+                      <button
+                        onClick={() => setEditingName(true)}
+                        className="font-mono text-[10px] text-primary hover:text-primary-alt mt-1"
+                      >
+                        ZMIEŃ NAZWĘ
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              <div>
+                <div className="font-mono text-sm text-text-primary mb-2">AVATAR</div>
+                <div className="flex gap-2 flex-wrap">
+                  {user.has_discord && (
+                    <button
+                      onClick={() => handleAvatarChange("DISCORD")}
+                      disabled={saving || user.avatar_source === "DISCORD"}
+                      className={`px-3 py-1.5 font-mono text-xs border ${
+                        user.avatar_source === "DISCORD"
+                          ? "bg-primary text-black border-primary"
+                          : "bg-white/10 text-text-primary border-white/20 hover:bg-white/20"
+                      } disabled:opacity-50`}
+                    >
+                      DISCORD
+                    </button>
+                  )}
+                  {user.has_google && (
+                    <button
+                      onClick={() => handleAvatarChange("GOOGLE")}
+                      disabled={saving || user.avatar_source === "GOOGLE"}
+                      className={`px-3 py-1.5 font-mono text-xs border ${
+                        user.avatar_source === "GOOGLE"
+                          ? "bg-primary text-black border-primary"
+                          : "bg-white/10 text-text-primary border-white/20 hover:bg-white/20"
+                      } disabled:opacity-50`}
+                    >
+                      GOOGLE
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleAvatarChange("DEFAULT")}
+                    disabled={saving || user.avatar_source === "DEFAULT"}
+                    className={`px-3 py-1.5 font-mono text-xs border ${
+                      user.avatar_source === "DEFAULT"
+                        ? "bg-primary text-black border-primary"
+                        : "bg-white/10 text-text-primary border-white/20 hover:bg-white/20"
+                    } disabled:opacity-50`}
+                  >
+                    DOMYŚLNY
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="font-mono text-sm text-text-primary mb-2">POŁĄCZ KONTA</div>
+                <div className="space-y-2">
+                  {(!user.has_discord || user.has_discord === false) && (
+                    <Button
+                      onClick={handleConnectDiscord}
+                      variant="default"
+                      size="sm"
+                      className="bg-[#5865F2] hover:bg-[#4752C4] text-white w-full"
+                    >
+                      POŁĄCZ Z DISCORD
+                    </Button>
+                  )}
+                  {(!user.has_google || user.has_google === false) && (
+                    <Button
+                      onClick={handleConnectGoogle}
+                      variant="default"
+                      size="sm"
+                      className="bg-white hover:bg-gray-100 text-black w-full"
+                    >
+                      POŁĄCZ Z GOOGLE
+                    </Button>
+                  )}
+                  {user.has_discord && user.has_google && (
+                    <div className="font-mono text-xs text-text-secondary">
+                      Wszystkie konta połączone
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {user.is_admin && (
                 <div className="space-y-2">
                   <Button
@@ -172,14 +369,24 @@ export default function SettingsPage() {
               </Button>
             </div>
           ) : (
-            <Button
-              onClick={login}
-              variant="primary"
-              size="md"
-              className="bg-primary text-black"
-            >
-              ZALOGUJ PRZEZ DISCORD
-            </Button>
+            <div className="space-y-2">
+              <Button
+                onClick={login}
+                variant="primary"
+                size="md"
+                className="bg-[#5865F2] hover:bg-[#4752C4] text-white w-full"
+              >
+                ZALOGUJ PRZEZ DISCORD
+              </Button>
+              <Button
+                onClick={handleLoginGoogle}
+                variant="default"
+                size="md"
+                className="bg-white hover:bg-gray-100 text-black w-full"
+              >
+                ZALOGUJ PRZEZ GOOGLE
+              </Button>
+            </div>
           )}
         </div>
       </Card>

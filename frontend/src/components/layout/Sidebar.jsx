@@ -25,6 +25,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { getIconComponent } from "../../utils/badgeIcons";
 import TextGlitch from "../TextGlitch";
+import DiscordLogo from "../auth/DiscordLogo";
+import GoogleLogo from "../auth/GoogleLogo";
 
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
@@ -67,6 +69,11 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const handleLogin = () => {
     login();
+    onClose?.();
+  };
+
+  const handleLoginGoogle = () => {
+    window.location.href = "/api/auth/login/google";
     onClose?.();
   };
 
@@ -167,7 +174,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   {user.avatar ? (
                     <img
                       src={user.avatar}
-                      alt={user.username}
+                      alt={user.display_name || user.username}
                       className="w-12 h-12 border-2 rounded-full object-cover shadow-lg"
                       style={{
                         borderColor:
@@ -218,7 +225,7 @@ export default function Sidebar({ isOpen, onClose }) {
                       color: user.featured_badge?.color || "var(--primary)",
                     }}
                   >
-                    {user.username}
+                    {user.display_name || user.username}
                   </div>
                   {user.rank && (
                     <div className="flex items-center gap-1.5 mb-1.5">
@@ -348,16 +355,26 @@ export default function Sidebar({ isOpen, onClose }) {
             </div>
           </div>
         ) : (
-          <button
-            onClick={handleLogin}
-            className="group w-full flex items-center justify-center gap-2 px-2.5 py-2 font-mono text-[10px] font-bold text-black bg-[#5865F2] hover:bg-[#4752C4] rounded-sm transition-all duration-200 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transform hover:shadow-lg"
-          >
-            <LogIn
-              size={14}
-              className="transition-transform duration-200 group-hover:translate-x-0.5"
-            />
-            DISCORD LOGIN
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={handleLogin}
+              className="group w-full flex items-center gap-3 px-4 py-2 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-sm transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <DiscordLogo size={18} className="text-white shrink-0" />
+              <span className="font-sans text-sm font-medium flex-1 text-left">
+                Zaloguj się przez Discord
+              </span>
+            </button>
+            <button
+              onClick={handleLoginGoogle}
+              className="group w-full flex items-center gap-3 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-sm border border-gray-300 transition-all duration-200 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <GoogleLogo size={18} className="shrink-0" />
+              <span className="font-sans text-sm font-medium flex-1 text-left">
+                Zaloguj się przez Google
+              </span>
+            </button>
+          </div>
         )}
       </div>
 

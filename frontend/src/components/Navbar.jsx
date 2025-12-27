@@ -41,11 +41,11 @@ export default function Navbar() {
                   {user.avatar && (
                     <img
                       src={user.avatar}
-                      alt={user.username}
+                      alt={user.display_name || user.username}
                       className="w-8 h-8 border border-primary"
                     />
                   )}
-                  <span className="font-mono text-sm text-text-primary">{user.username}</span>
+                  <span className="font-mono text-sm text-text-primary">{user.display_name || user.username}</span>
                 </div>
                 <Button
                   onClick={logout}

@@ -52,7 +52,7 @@ export default function ProfileHeader() {
                 {user.avatar ? (
                   <img
                     src={user.avatar}
-                    alt={user.username}
+                    alt={user.display_name || user.username}
                     className="w-24 h-24 border-2 rounded-full object-cover shadow-lg"
                     style={{
                       borderColor: user.featured_badge?.color || "var(--primary)",
@@ -100,7 +100,7 @@ export default function ProfileHeader() {
                         color: user.featured_badge?.color || "var(--primary)",
                       }}
                     >
-                      {user.username}
+                      {user.display_name || user.username}
                     </div>
                     {user.rank && (
                       <div className="flex items-center gap-2 mt-0.5">

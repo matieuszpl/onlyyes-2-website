@@ -7,14 +7,13 @@ class Settings(BaseSettings):
     secret_key: str = os.getenv("SECRET_KEY", "secret-key-change-in-production")
     discord_client_id: str = os.getenv("DISCORD_CLIENT_ID", "")
     discord_client_secret: str = os.getenv("DISCORD_CLIENT_SECRET", "")
+    google_client_id: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    google_client_secret: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
     app_base_url: str = os.getenv("APP_BASE_URL", "https://onlyyes.pl")
     azuracast_url: str = os.getenv("AZURACAST_API_URL", os.getenv("AZURACAST_URL", ""))
     azuracast_api_key: str = os.getenv("AZURACAST_API_KEY", "")
     azuracast_station_id: str = os.getenv("AZURACAST_STATION_ID", "1")
     azuracast_stream_url: str = os.getenv("AZURACAST_STREAM_URL", "")
-    
-    class Config:
-        env_file = ".env"
 
 settings = Settings()
 

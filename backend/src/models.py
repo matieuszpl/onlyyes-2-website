@@ -7,9 +7,17 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    discord_id = Column(String, unique=True, index=True) # ID z Discorda
+    discord_id = Column(String, unique=True, index=True, nullable=True) # ID z Discorda
+    google_id = Column(String, unique=True, index=True, nullable=True) # ID z Google
     username = Column(String)
-    avatar_url = Column(String, nullable=True)
+    display_name = Column(String, nullable=True) # Wyświetlana nazwa użytkownika
+    avatar_url = Column(String, nullable=True) # Aktualny avatar URL
+    avatar_source = Column(String, default="DISCORD") # DISCORD, GOOGLE, DEFAULT
+    discord_avatar_url = Column(String, nullable=True)
+    google_avatar_url = Column(String, nullable=True)
+    discord_username = Column(String, nullable=True) # Nazwa użytkownika z Discorda
+    google_username = Column(String, nullable=True) # Nazwa użytkownika z Google
+    email = Column(String, nullable=True) # Email użytkownika (z Discord lub Google)
     is_admin = Column(Boolean, default=False)
     reputation_score = Column(Integer, default=0) # Punkty za dobry gust
     xp = Column(Integer, default=0) # Punkty doświadczenia

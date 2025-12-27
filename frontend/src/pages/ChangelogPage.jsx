@@ -36,6 +36,11 @@ const changelogData = [
     date: "2025-12-27",
     entries: {
       "Nowe funkcjonalności": [
+        "Dodano logowanie przez Google OAuth",
+        "Dodano możliwość łączenia kont Discord i Google",
+        "Dodano możliwość zmiany wyświetlanej nazwy użytkownika",
+        "Dodano możliwość wyboru źródła avatara",
+        "Dodano możliwość usuwania konta",
         "Dodano obsługę playlist w formularzu propozycji utworów",
         "Dodano możliwość masowego przesyłania utworów z Google Drive",
         "Dodano historię propozycji utworów z wyświetlaniem statusu",
@@ -44,6 +49,8 @@ const changelogData = [
         "Dodano ustawienia prywatności - możliwość ukrycia aktywności w rankingu i historii",
       ],
       "UI/UX": [
+        "Ulepszono stronę ustawień konta",
+        "Ulepszono organizację strony profilu",
         "Ulepszono wygląd formularza propozycji utworów z animacjami i lepszą obsługą błędów",
         "Ulepszono wygląd playera radia - uproszczono interfejs",
         "Ulepszono nagłówki stron - dodano gradienty i kolory dla różnych sekcji",
@@ -62,6 +69,7 @@ const changelogData = [
         "Ulepszono layout strony głównej",
       ],
       "Poprawki błędów": [
+        "Dodano obsługę błędów OAuth",
         "Dodano sprawdzanie duplikatów propozycji utworów",
         "Poprawiono obsługę błędów w formularzu propozycji",
         "Naprawiono formatowanie czasu w harmonogramie audycji",

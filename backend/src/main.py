@@ -6,7 +6,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from starlette.responses import RedirectResponse, StreamingResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc
+from sqlalchemy import select, func, desc, and_
 from pydantic import BaseModel
 from typing import Optional, List, Tuple, Dict
 from datetime import datetime, timedelta, timezone
@@ -265,6 +265,112 @@ async def lifespan(app: FastAPI):
             await conn.execute(text("ALTER TABLE users ADD COLUMN hide_activity_history BOOLEAN DEFAULT FALSE"))
             await conn.execute(text("UPDATE users SET hide_activity_history = FALSE WHERE hide_activity_history IS NULL"))
             logger.info("Added hide_activity_history column to users table")
+        
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='google_id'
+        """))
+        google_id_exists = result.scalar() is not None
+        
+        if not google_id_exists:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN google_id VARCHAR"))
+            await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_id ON users(google_id) WHERE google_id IS NOT NULL"))
+            logger.info("Added google_id column to users table")
+        
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='display_name'
+        """))
+        display_name_exists = result.scalar() is not None
+        
+        if not display_name_exists:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN display_name VARCHAR"))
+            await conn.execute(text("UPDATE users SET display_name = username WHERE display_name IS NULL"))
+            logger.info("Added display_name column to users table")
+        
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='avatar_source'
+        """))
+        avatar_source_exists = result.scalar() is not None
+        
+        if not avatar_source_exists:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN avatar_source VARCHAR DEFAULT 'DISCORD'"))
+            await conn.execute(text("UPDATE users SET avatar_source = 'DISCORD' WHERE avatar_source IS NULL"))
+            logger.info("Added avatar_source column to users table")
+        
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='discord_avatar_url'
+        """))
+        discord_avatar_url_exists = result.scalar() is not None
+        
+        if not discord_avatar_url_exists:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN discord_avatar_url VARCHAR"))
+            await conn.execute(text("UPDATE users SET discord_avatar_url = avatar_url WHERE discord_avatar_url IS NULL AND discord_id IS NOT NULL"))
+            logger.info("Added discord_avatar_url column to users table")
+        
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='google_avatar_url'
+        """))
+        google_avatar_url_exists = result.scalar() is not None
+        
+        if not google_avatar_url_exists:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN google_avatar_url VARCHAR"))
+            logger.info("Added google_avatar_url column to users table")
+        
+        result = await conn.execute(text("""
+            SELECT constraint_name 
+            FROM information_schema.table_constraints 
+            WHERE table_name='users' AND constraint_name='users_discord_id_key'
+        """))
+        discord_unique_exists = result.scalar() is not None
+        
+        if not discord_unique_exists:
+            try:
+                await conn.execute(text("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_discord_id_key"))
+                await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_discord_id ON users(discord_id) WHERE discord_id IS NOT NULL"))
+            except Exception as e:
+                logger.warning(f"Could not update discord_id constraint: {e}")
+        
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='discord_username'
+        """))
+        discord_username_exists = result.scalar() is not None
+        
+        if not discord_username_exists:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN discord_username VARCHAR"))
+            logger.info("Added discord_username column to users table")
+        
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='google_username'
+        """))
+        google_username_exists = result.scalar() is not None
+        
+        if not google_username_exists:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN google_username VARCHAR"))
+            logger.info("Added google_username column to users table")
+        
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='email'
+        """))
+        email_exists = result.scalar() is not None
+        
+        if not email_exists:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN email VARCHAR"))
+            logger.info("Added email column to users table")
         
         await initialize_default_badges(conn)
     
@@ -561,7 +667,14 @@ async def root():
 @app.get("/api/auth/login")
 async def login(request: Request):
     redirect_uri = f"{config.settings.app_base_url}/api/auth/callback"
+    logger.info(f"Discord login redirect_uri: {redirect_uri}")
+    logger.info(f"APP_BASE_URL: {config.settings.app_base_url}")
     return await auth.oauth.discord.authorize_redirect(request, redirect_uri)
+
+@app.get("/api/auth/login/google")
+async def login_google(request: Request):
+    redirect_uri = f"{config.settings.app_base_url}/api/auth/callback/google"
+    return await auth.oauth.google.authorize_redirect(request, redirect_uri)
 
 @app.get("/api/auth/callback")
 async def auth_callback(request: Request, db: AsyncSession = Depends(get_db)):
@@ -578,20 +691,273 @@ async def auth_callback(request: Request, db: AsyncSession = Depends(get_db)):
 
     resp = await auth.oauth.discord.get('users/@me', token=token)
     discord_user = resp.json()
+    discord_id = discord_user['id']
+    discord_email = discord_user.get('email')
     
-    result = await db.execute(select(models.User).where(models.User.discord_id == discord_user['id']))
+    # Sprawdź czy istnieje użytkownik z tym Discord ID
+    result = await db.execute(select(models.User).where(models.User.discord_id == discord_id))
     db_user = result.scalar_one_or_none()
     
-    if not db_user:
-        new_user = models.User(
-            discord_id=discord_user['id'],
-            username=discord_user['username'],
-            avatar_url=f"https://cdn.discordapp.com/avatars/{discord_user['id']}/{discord_user['avatar']}.png"
-        )
-        db.add(new_user)
+    if db_user:
+        # Użytkownik istnieje z tym Discord ID - zaktualizuj dane
+        if not db_user.discord_avatar_url and discord_user.get('avatar'):
+            avatar_url = f"https://cdn.discordapp.com/avatars/{discord_id}/{discord_user['avatar']}.png"
+            db_user.discord_avatar_url = avatar_url
+            if db_user.avatar_source == "DISCORD" or not db_user.avatar_url:
+                db_user.avatar_url = avatar_url
+        if not db_user.discord_username:
+            db_user.discord_username = discord_user.get('username')
+        if discord_email and not db_user.email:
+            db_user.email = discord_email
         await db.commit()
+    else:
+        # Nie ma użytkownika z tym Discord ID
+        # Sprawdź czy istnieje użytkownik z Google, który ma ten sam email
+        existing_user = None
+        if discord_email:
+            # Sprawdź czy istnieje użytkownik z tym samym emailem
+            result = await db.execute(select(models.User).where(models.User.email == discord_email))
+            existing_user = result.scalar_one_or_none()
+        
+        if existing_user:
+            # Znaleziono użytkownika z tym samym emailem - połącz konta
+            if existing_user.discord_id:
+                # Użytkownik już ma Discord ID - sprawdź czy to ten sam ID
+                if existing_user.discord_id == discord_id:
+                    # To ten sam użytkownik - użyj istniejącego konta
+                    db_user = existing_user
+                    if not db_user.discord_avatar_url and discord_user.get('avatar'):
+                        avatar_url = f"https://cdn.discordapp.com/avatars/{discord_id}/{discord_user['avatar']}.png"
+                        db_user.discord_avatar_url = avatar_url
+                        if db_user.avatar_source == "DISCORD" or not db_user.avatar_url:
+                            db_user.avatar_url = avatar_url
+                    if not db_user.discord_username:
+                        db_user.discord_username = discord_user.get('username')
+                    if discord_email and not db_user.email:
+                        db_user.email = discord_email
+                    await db.commit()
+                else:
+                    # Inny Discord ID - sprawdź czy ten Discord ID nie jest już przypisany do innego użytkownika
+                    discord_id_user = await db.scalar(select(models.User).where(models.User.discord_id == discord_id))
+                    if discord_id_user:
+                        # Ten Discord ID jest już przypisany do innego użytkownika
+                        logger.warning(f"Discord ID {discord_id} is already linked to user {discord_id_user.id}, but email {discord_email} belongs to user {existing_user.id}")
+                        # Użyj konta z tym Discord ID (to jest bardziej pewne niż email)
+                        db_user = discord_id_user
+                        if discord_email and not db_user.email:
+                            db_user.email = discord_email
+                        await db.commit()
+                    else:
+                        # Inny Discord ID, ale nie jest przypisany - to nie powinno się zdarzyć, ale na wszelki wypadek
+                        logger.warning(f"User {existing_user.id} already has different discord_id {existing_user.discord_id}, but trying to link {discord_id}")
+                        # Utwórz nowe konto
+                        existing_user = None
+            else:
+                # Połącz konta - dodaj Discord ID do istniejącego konta
+                # Najpierw sprawdź czy ten Discord ID nie jest już przypisany do innego użytkownika
+                discord_id_user = await db.scalar(select(models.User).where(models.User.discord_id == discord_id))
+                if discord_id_user and discord_id_user.id != existing_user.id:
+                    # Ten Discord ID jest już przypisany do innego użytkownika
+                    logger.warning(f"Discord ID {discord_id} is already linked to user {discord_id_user.id}, cannot link to user {existing_user.id} with same email")
+                    # Użyj konta z tym Discord ID (to jest bardziej pewne niż email)
+                    db_user = discord_id_user
+                    if discord_email and not db_user.email:
+                        db_user.email = discord_email
+                    await db.commit()
+                else:
+                    # Połącz konta - dodaj Discord ID do istniejącego konta
+                    avatar_url = None
+                    if discord_user.get('avatar'):
+                        avatar_url = f"https://cdn.discordapp.com/avatars/{discord_id}/{discord_user['avatar']}.png"
+                    
+                    existing_user.discord_id = discord_id
+                    existing_user.discord_avatar_url = avatar_url
+                    existing_user.discord_username = discord_user.get('username')
+                    if not existing_user.email:
+                        existing_user.email = discord_email
+                    
+                    # Jeśli użytkownik nie ma avatara lub ma domyślny, użyj Discord avatara
+                    if not existing_user.avatar_url or existing_user.avatar_source == "DEFAULT":
+                        if avatar_url:
+                            existing_user.avatar_url = avatar_url
+                            existing_user.avatar_source = "DISCORD"
+                    
+                    await db.commit()
+                    await db.refresh(existing_user)
+                    db_user = existing_user
+                    logger.info(f"Linked Discord account {discord_id} to existing user {existing_user.id}")
+        
+        if not existing_user:
+            # Nie znaleziono użytkownika z tym samym emailem - utwórz nowe konto
+            avatar_url = None
+            if discord_user.get('avatar'):
+                avatar_url = f"https://cdn.discordapp.com/avatars/{discord_id}/{discord_user['avatar']}.png"
+            
+            new_user = models.User(
+                discord_id=discord_id,
+                username=discord_user['username'],
+                display_name=discord_user['username'],
+                avatar_url=avatar_url,
+                avatar_source="DISCORD",
+                discord_avatar_url=avatar_url,
+                discord_username=discord_user['username'],
+                email=discord_email
+            )
+            db.add(new_user)
+            await db.commit()
+            await db.refresh(new_user)
+            db_user = new_user
     
-    request.session['user'] = discord_user
+    request.session['user'] = {**discord_user, 'provider': 'discord'}
+    
+    return RedirectResponse(url=f"{config.settings.app_base_url}/")
+
+@app.get("/api/auth/callback/google")
+async def auth_callback_google(request: Request, db: AsyncSession = Depends(get_db)):
+    try:
+        token = await auth.oauth.google.authorize_access_token(request)
+    except Exception as e:
+        logger.error(f"Błąd Google OAuth: {e}")
+        return {
+            "error": "OAuth Failed", 
+            "detail": str(e),
+            "tip": "Sprobuj wyczyscic ciasteczka w przegladarce dla localhost",
+            "session_keys": list(request.session.keys())
+        }
+
+    try:
+        resp = await auth.oauth.google.get('userinfo', token=token)
+        google_user = resp.json()
+        logger.info(f"Google userinfo response: {google_user}")
+    except Exception as e:
+        logger.error(f"Google userinfo error: {e}")
+        return {
+            "error": "Userinfo Failed",
+            "detail": str(e)
+        }
+    
+    google_id = google_user.get('sub') or google_user.get('id')
+    if not google_id:
+        logger.error(f"Google user response missing ID. Full response: {google_user}")
+        return {
+            "error": "Invalid Response",
+            "detail": "Google response missing user ID"
+        }
+    
+    google_email = google_user.get('email')
+    google_name = google_user.get('name') or google_user.get('email', 'User')
+    
+    # Sprawdź czy istnieje użytkownik z tym Google ID
+    result = await db.execute(select(models.User).where(models.User.google_id == google_id))
+    db_user = result.scalar_one_or_none()
+    
+    if db_user:
+        # Użytkownik istnieje z tym Google ID - zaktualizuj dane
+        if not db_user.google_avatar_url and google_user.get('picture'):
+            avatar_url = google_user['picture']
+            db_user.google_avatar_url = avatar_url
+            if db_user.avatar_source == "GOOGLE" or not db_user.avatar_url:
+                db_user.avatar_url = avatar_url
+        if not db_user.google_username:
+            db_user.google_username = google_name
+        if google_email and not db_user.email:
+            db_user.email = google_email
+        await db.commit()
+    else:
+        # Nie ma użytkownika z tym Google ID
+        # Sprawdź czy istnieje użytkownik z Discord, który ma ten sam email
+        existing_user = None
+        if google_email:
+            # Sprawdź czy istnieje użytkownik z tym samym emailem
+            result = await db.execute(select(models.User).where(models.User.email == google_email))
+            existing_user = result.scalar_one_or_none()
+        
+        if existing_user:
+            # Znaleziono użytkownika z tym samym emailem - połącz konta
+            if existing_user.google_id:
+                # Użytkownik już ma Google ID - sprawdź czy to ten sam ID
+                if existing_user.google_id == google_id:
+                    # To ten sam użytkownik - użyj istniejącego konta
+                    db_user = existing_user
+                    if not db_user.google_avatar_url and google_user.get('picture'):
+                        avatar_url = google_user['picture']
+                        db_user.google_avatar_url = avatar_url
+                        if db_user.avatar_source == "GOOGLE" or not db_user.avatar_url:
+                            db_user.avatar_url = avatar_url
+                    if not db_user.google_username:
+                        db_user.google_username = google_name
+                    if google_email and not db_user.email:
+                        db_user.email = google_email
+                    await db.commit()
+                else:
+                    # Inny Google ID - sprawdź czy ten Google ID nie jest już przypisany do innego użytkownika
+                    google_id_user = await db.scalar(select(models.User).where(models.User.google_id == google_id))
+                    if google_id_user:
+                        # Ten Google ID jest już przypisany do innego użytkownika
+                        logger.warning(f"Google ID {google_id} is already linked to user {google_id_user.id}, but email {google_email} belongs to user {existing_user.id}")
+                        # Użyj konta z tym Google ID (to jest bardziej pewne niż email)
+                        db_user = google_id_user
+                        if google_email and not db_user.email:
+                            db_user.email = google_email
+                        await db.commit()
+                    else:
+                        # Inny Google ID, ale nie jest przypisany - to nie powinno się zdarzyć, ale na wszelki wypadek
+                        logger.warning(f"User {existing_user.id} already has different google_id {existing_user.google_id}, but trying to link {google_id}")
+                        # Utwórz nowe konto
+                        existing_user = None
+            else:
+                # Połącz konta - dodaj Google ID do istniejącego konta
+                # Najpierw sprawdź czy ten Google ID nie jest już przypisany do innego użytkownika
+                google_id_user = await db.scalar(select(models.User).where(models.User.google_id == google_id))
+                if google_id_user and google_id_user.id != existing_user.id:
+                    # Ten Google ID jest już przypisany do innego użytkownika
+                    logger.warning(f"Google ID {google_id} is already linked to user {google_id_user.id}, cannot link to user {existing_user.id} with same email")
+                    # Użyj konta z tym Google ID (to jest bardziej pewne niż email)
+                    db_user = google_id_user
+                    if google_email and not db_user.email:
+                        db_user.email = google_email
+                    await db.commit()
+                else:
+                    # Połącz konta - dodaj Google ID do istniejącego konta
+                    avatar_url = google_user.get('picture')
+                    
+                    existing_user.google_id = google_id
+                    existing_user.google_avatar_url = avatar_url
+                    existing_user.google_username = google_name
+                    if not existing_user.email:
+                        existing_user.email = google_email
+                    
+                    # Jeśli użytkownik nie ma avatara lub ma domyślny, użyj Google avatara
+                    if not existing_user.avatar_url or existing_user.avatar_source == "DEFAULT":
+                        if avatar_url:
+                            existing_user.avatar_url = avatar_url
+                            existing_user.avatar_source = "GOOGLE"
+                    
+                    await db.commit()
+                    await db.refresh(existing_user)
+                    db_user = existing_user
+                    logger.info(f"Linked Google account {google_id} to existing user {existing_user.id}")
+        
+        if not existing_user:
+            # Nie znaleziono użytkownika z tym samym emailem - utwórz nowe konto
+            avatar_url = google_user.get('picture')
+            
+            new_user = models.User(
+                google_id=google_id,
+                username=google_name,
+                display_name=google_name,
+                avatar_url=avatar_url,
+                avatar_source="GOOGLE",
+                google_avatar_url=avatar_url,
+                google_username=google_name,
+                email=google_email
+            )
+            db.add(new_user)
+            await db.commit()
+            await db.refresh(new_user)
+            db_user = new_user
+    
+    request.session['user'] = {**google_user, 'id': google_id, 'provider': 'google'}
     
     return RedirectResponse(url=f"{config.settings.app_base_url}/")
 
@@ -614,11 +980,24 @@ async def read_users_me(request: Request, db: AsyncSession = Depends(get_db)):
                     "color": badge.color
                 }
         
+        default_avatar_color = "#5865F2"
+        if featured_badge and featured_badge.get("color"):
+            default_avatar_color = featured_badge["color"]
+        
         return {
             "is_logged_in": True,
             "id": user.id,
             "username": user.username,
+            "display_name": user.display_name or user.username,
             "avatar": user.avatar_url,
+            "avatar_source": user.avatar_source or "DISCORD",
+            "discord_avatar": user.discord_avatar_url,
+            "google_avatar": user.google_avatar_url,
+            "has_discord": user.discord_id is not None,
+            "has_google": user.google_id is not None,
+            "discord_username": user.discord_username,
+            "google_username": user.google_username,
+            "default_avatar_color": default_avatar_color,
             "is_admin": user.is_admin,
             "reputation_score": user.reputation_score,
             "xp": xp,
@@ -2331,6 +2710,304 @@ async def update_user_settings(request: Request, settings_req: UserSettingsReque
         "hide_activity": user.hide_activity,
         "hide_activity_history": user.hide_activity_history
     }
+
+class UpdateDisplayNameRequest(BaseModel):
+    display_name: str
+
+class UpdateAvatarRequest(BaseModel):
+    avatar_source: str  # DISCORD, GOOGLE, DEFAULT
+
+@app.put("/api/users/me/display-name")
+async def update_display_name(request: Request, name_req: UpdateDisplayNameRequest, db: AsyncSession = Depends(get_db)):
+    user = await auth.get_current_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    import re
+    display_name = name_req.display_name.strip()
+    
+    if not display_name or len(display_name) < 3:
+        raise HTTPException(status_code=400, detail="Nazwa musi mieć co najmniej 3 znaki")
+    
+    if len(display_name) > 30:
+        raise HTTPException(status_code=400, detail="Nazwa może mieć maksymalnie 30 znaków")
+    
+    if not re.match(r'^[a-zA-Z0-9_\-\.]+$', display_name):
+        raise HTTPException(status_code=400, detail="Nazwa może zawierać tylko litery, cyfry, _, - i .")
+    
+    user.display_name = display_name
+    await db.commit()
+    
+    return {"status": "success", "display_name": user.display_name}
+
+@app.put("/api/users/me/avatar")
+async def update_avatar(request: Request, avatar_req: UpdateAvatarRequest, db: AsyncSession = Depends(get_db)):
+    user = await auth.get_current_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    avatar_source = avatar_req.avatar_source.upper()
+    if avatar_source not in ["DISCORD", "GOOGLE", "DEFAULT"]:
+        raise HTTPException(status_code=400, detail="Nieprawidłowe źródło avatara")
+    
+    if avatar_source == "DISCORD" and not user.discord_avatar_url:
+        raise HTTPException(status_code=400, detail="Nie masz połączonego konta Discord")
+    
+    if avatar_source == "GOOGLE" and not user.google_avatar_url:
+        raise HTTPException(status_code=400, detail="Nie masz połączonego konta Google")
+    
+    user.avatar_source = avatar_source
+    
+    if avatar_source == "DISCORD":
+        user.avatar_url = user.discord_avatar_url
+    elif avatar_source == "GOOGLE":
+        user.avatar_url = user.google_avatar_url
+    else:
+        default_color = "#5865F2"
+        if user.featured_badge_id:
+            badge = await db.get(models.Badge, user.featured_badge_id)
+            if badge and badge.color:
+                default_color = badge.color
+        user.avatar_url = f"{config.settings.app_base_url}/api/users/me/avatar/default?color={default_color.replace('#', '')}"
+    
+    await db.commit()
+    
+    return {"status": "success", "avatar_source": user.avatar_source, "avatar_url": user.avatar_url}
+
+@app.get("/api/users/me/avatar/default")
+async def get_default_avatar(request: Request, color: str = "5865F2", db: AsyncSession = Depends(get_db)):
+    """Zwraca domyślny avatar SVG z odpowiednim kolorem"""
+    from fastapi.responses import Response
+    
+    user = await auth.get_current_user(request, db)
+    if user and user.featured_badge_id:
+        badge = await db.get(models.Badge, user.featured_badge_id)
+        if badge and badge.color:
+            color = badge.color.replace('#', '')
+    
+    svg_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">
+<rect width="320" height="320" fill="#{color}"/>
+<path d="M0 0 C1.37 -0 2.74 -0.01 4.11 -0.01 C6.96 -0.02 9.8 -0.01 12.65 0.01 C16.27 0.03 19.89 0.02 23.51 -0 C26.33 -0.02 29.15 -0.01 31.97 -0 C33.94 -0 35.92 -0.01 37.89 -0.02 C49.05 0.09 59.29 2.44 67.43 10.53 C74.87 19.91 76.58 28.52 76.58 40.25 C76.58 41.21 76.59 42.17 76.59 43.16 C76.6 46.33 76.6 49.51 76.6 52.68 C76.6 54.89 76.61 57.1 76.61 59.31 C76.62 63.95 76.62 68.58 76.62 73.21 C76.62 79.14 76.63 85.06 76.65 90.99 C76.66 95.56 76.66 100.12 76.66 104.69 C76.66 106.88 76.67 109.06 76.68 111.24 C76.69 114.3 76.68 117.36 76.68 120.43 C76.68 121.32 76.69 122.21 76.69 123.13 C76.64 134.25 74.06 143.08 66.65 151.58 C57.53 160.34 46.63 161.15 34.53 161.06 C33.11 161.07 31.7 161.07 30.28 161.07 C27.33 161.08 24.39 161.07 21.44 161.05 C17.69 161.03 13.94 161.04 10.19 161.07 C7.27 161.08 4.36 161.08 1.44 161.07 C0.06 161.06 -1.32 161.07 -2.7 161.08 C-14.21 161.14 -24.21 159.75 -32.78 151.52 C-40.87 142.53 -42.87 134.06 -42.84 122.23 C-42.85 121.24 -42.85 120.24 -42.86 119.21 C-42.87 115.92 -42.87 112.64 -42.87 109.35 C-42.87 107.06 -42.88 104.76 -42.88 102.46 C-42.89 97.66 -42.89 92.85 -42.88 88.04 C-42.88 81.9 -42.89 75.76 -42.92 69.62 C-42.93 64.88 -42.93 60.14 -42.93 55.4 C-42.93 53.13 -42.93 50.87 -42.94 48.6 C-42.96 45.43 -42.95 42.26 -42.94 39.09 C-42.95 38.16 -42.95 37.24 -42.96 36.29 C-42.88 26.19 -40.41 18.06 -33.57 10.53 C-33.06 9.97 -32.56 9.42 -32.04 8.84 C-23.4 0.41 -11.42 -0.07 0 0 Z M-5.29 34.04 C-7.12 37.62 -7 41.05 -6.99 44.98 C-6.99 45.83 -7 46.69 -7.01 47.56 C-7.04 50.37 -7.04 53.18 -7.04 56 C-7.04 57.95 -7.05 59.91 -7.06 61.86 C-7.07 65.96 -7.07 70.06 -7.07 74.16 C-7.06 79.41 -7.09 84.66 -7.13 89.91 C-7.16 93.94 -7.16 97.98 -7.16 102.02 C-7.16 103.96 -7.17 105.89 -7.19 107.83 C-7.21 110.54 -7.2 113.24 -7.18 115.95 C-7.19 116.75 -7.21 117.55 -7.22 118.37 C-7.16 122.38 -6.74 124.31 -4.27 127.53 C-0.69 130.18 2.33 130.22 6.62 130.12 C7.79 130.13 7.79 130.13 8.99 130.13 C10.63 130.12 12.27 130.1 13.92 130.07 C16.43 130.03 18.93 130.03 21.44 130.04 C23.04 130.03 24.64 130.02 26.25 130 C26.99 130 27.74 130 28.51 130 C32.95 129.9 35.94 129.36 39.43 126.53 C40.68 122.78 40.59 119.28 40.59 115.38 C40.6 114.54 40.6 113.71 40.61 112.86 C40.62 110.1 40.63 107.35 40.64 104.6 C40.64 102.69 40.65 100.78 40.65 98.87 C40.66 94.86 40.67 90.85 40.67 86.84 C40.68 81.7 40.7 76.56 40.73 71.43 C40.75 67.48 40.76 63.53 40.76 59.58 C40.76 57.68 40.77 55.79 40.78 53.9 C40.8 51.25 40.8 48.6 40.79 45.95 C40.8 45.16 40.81 44.38 40.82 43.58 C40.78 39.1 40.41 35.99 37.43 32.53 C35.53 31.79 35.53 31.79 33.38 31.9 C32.57 31.89 31.76 31.88 30.92 31.86 C29.61 31.88 29.61 31.88 28.28 31.9 C27.38 31.9 26.48 31.9 25.55 31.9 C23.65 31.9 21.75 31.91 19.85 31.93 C16.94 31.97 14.04 31.95 11.12 31.94 C9.28 31.94 7.43 31.95 5.59 31.96 C4.72 31.96 3.85 31.95 2.95 31.95 C1.73 31.97 1.73 31.97 0.49 32 C-0.22 32 -0.94 32.01 -1.67 32.02 C-3.69 32.42 -3.69 32.42 -5.29 34.04 Z " fill="#FFFFFF" transform="translate(82.56640625,77.46875)"/>
+<path d="M0 0 C7.92 0 15.84 0 24 0 C28.85 8.44 33.51 16.89 37.81 25.62 C44.4 39 51.56 52.08 59 65 C66.43 53.6 72.7 41.57 79.09 29.57 C82.02 24.08 84.98 18.61 87.93 13.13 C89.43 10.34 90.93 7.56 92.43 4.77 C93.28 3.2 94.13 1.62 95 0 C103.25 0 111.5 0 120 0 C118.65 3.38 117.42 6.21 115.64 9.31 C114.94 10.53 114.94 10.53 114.22 11.79 C113.71 12.66 113.21 13.54 112.69 14.44 C112.15 15.36 111.62 16.29 111.07 17.25 C105.74 26.51 100.3 35.71 94.84 44.9 C92.43 48.96 90.02 53.03 87.61 57.1 C84.07 63.07 80.54 69.03 77 75 C86.57 75 96.14 75 106 75 C106 79.62 106 84.24 106 89 C94.12 89 82.24 89 70 89 C70 94.28 70 99.56 70 105 C81.88 105 93.76 105 106 105 C106 109.95 106 114.9 106 120 C94.12 120 82.24 120 70 120 C70 133.2 70 146.4 70 160 C62.41 160 54.82 160 47 160 C47 146.8 47 133.6 47 120 C35.12 120 23.24 120 11 120 C11 115.05 11 110.1 11 105 C22.88 105 34.76 105 47 105 C47 99.72 47 94.44 47 89 C35.12 89 23.24 89 11 89 C11 84.38 11 79.76 11 75 C20.24 74.67 29.48 74.34 39 74 C31.68 59.88 24.24 45.85 16.59 31.9 C13.68 26.59 10.77 21.26 7.88 15.94 C7.32 14.92 6.76 13.9 6.19 12.85 C5.67 11.9 5.15 10.95 4.62 9.96 C4.16 9.13 3.7 8.29 3.23 7.42 C2.01 5.02 1 2.51 0 0 Z " fill="#FFFFFF" transform="translate(168,78)"/>
+</svg>'''
+    
+    return Response(content=svg_content, media_type="image/svg+xml")
+
+@app.get("/api/auth/connect/discord")
+async def connect_discord(request: Request):
+    redirect_uri = f"{config.settings.app_base_url}/api/auth/connect/callback/discord"
+    return await auth.oauth.discord.authorize_redirect(request, redirect_uri)
+
+@app.get("/api/auth/connect/google")
+async def connect_google(request: Request):
+    redirect_uri = f"{config.settings.app_base_url}/api/auth/connect/callback/google"
+    return await auth.oauth.google.authorize_redirect(request, redirect_uri)
+
+@app.get("/api/auth/connect/callback/discord")
+async def connect_callback_discord(request: Request, db: AsyncSession = Depends(get_db)):
+    current_user = await auth.get_current_user(request, db)
+    if not current_user:
+        return RedirectResponse(url=f"{config.settings.app_base_url}/?error=not_authenticated")
+    
+    try:
+        token = await auth.oauth.discord.authorize_access_token(request)
+    except Exception as e:
+        return RedirectResponse(url=f"{config.settings.app_base_url}/?error=oauth_failed")
+    
+    resp = await auth.oauth.discord.get('users/@me', token=token)
+    discord_user = resp.json()
+    
+    if current_user.discord_id:
+        return RedirectResponse(url=f"{config.settings.app_base_url}/?error=already_connected")
+    
+    existing_user = await db.scalar(select(models.User).where(models.User.discord_id == discord_user['id']))
+    if existing_user and existing_user.id != current_user.id:
+        return RedirectResponse(url=f"{config.settings.app_base_url}/?error=account_exists")
+    
+    avatar_url = None
+    if discord_user.get('avatar'):
+        avatar_url = f"https://cdn.discordapp.com/avatars/{discord_user['id']}/{discord_user['avatar']}.png"
+    
+    current_user.discord_id = discord_user['id']
+    current_user.discord_avatar_url = avatar_url
+    current_user.discord_username = discord_user.get('username')
+    if discord_user.get('email') and not current_user.email:
+        current_user.email = discord_user.get('email')
+    
+    if not current_user.avatar_url or current_user.avatar_source == "DEFAULT":
+        current_user.avatar_url = avatar_url
+        current_user.avatar_source = "DISCORD"
+    
+    await db.commit()
+    
+    return RedirectResponse(url=f"{config.settings.app_base_url}/profile?connected=discord")
+
+@app.get("/api/auth/connect/callback/google")
+async def connect_callback_google(request: Request, db: AsyncSession = Depends(get_db)):
+    current_user = await auth.get_current_user(request, db)
+    if not current_user:
+        return RedirectResponse(url=f"{config.settings.app_base_url}/?error=not_authenticated")
+    
+    try:
+        token = await auth.oauth.google.authorize_access_token(request)
+    except Exception as e:
+        logger.error(f"Google OAuth token error: {e}")
+        return RedirectResponse(url=f"{config.settings.app_base_url}/?error=oauth_failed")
+    
+    try:
+        resp = await auth.oauth.google.get('userinfo', token=token)
+        google_user = resp.json()
+        logger.info(f"Google userinfo response: {google_user}")
+    except Exception as e:
+        logger.error(f"Google userinfo error: {e}")
+        return RedirectResponse(url=f"{config.settings.app_base_url}/?error=userinfo_failed")
+    
+    google_id = google_user.get('sub') or google_user.get('id')
+    if not google_id:
+        logger.error(f"Google user response missing ID. Full response: {google_user}")
+        return RedirectResponse(url=f"{config.settings.app_base_url}/?error=invalid_response")
+    
+    if current_user.google_id:
+        return RedirectResponse(url=f"{config.settings.app_base_url}/?error=already_connected")
+    
+    # Sprawdź czy ten Google ID nie jest już przypisany do innego użytkownika
+    existing_user = await db.scalar(select(models.User).where(models.User.google_id == google_id))
+    if existing_user and existing_user.id != current_user.id:
+        return RedirectResponse(url=f"{config.settings.app_base_url}/?error=account_exists")
+    
+    # Sprawdź czy istnieje inny użytkownik z tym samym emailem (jeśli dostępny)
+    google_email = google_user.get('email')
+    if google_email:
+        email_user = await db.scalar(select(models.User).where(
+            and_(
+                models.User.email == google_email,
+                models.User.id != current_user.id
+            )
+        ))
+        if email_user:
+            # Jeśli istnieje użytkownik z tym samym emailem, ale nie ma Google ID,
+            # to może to być ten sam użytkownik - ale nie możemy automatycznie połączyć
+            # bo użytkownik może mieć różne konta z tym samym emailem
+            # Więc po prostu zwróć błąd
+            return RedirectResponse(url=f"{config.settings.app_base_url}/?error=email_already_used")
+    
+    avatar_url = google_user.get('picture')
+    
+    current_user.google_id = google_id
+    current_user.google_avatar_url = avatar_url
+    current_user.google_username = google_user.get('name') or google_user.get('email')
+    if google_user.get('email') and not current_user.email:
+        current_user.email = google_user.get('email')
+    
+    if not current_user.avatar_url or current_user.avatar_source == "DEFAULT":
+        current_user.avatar_url = avatar_url
+        current_user.avatar_source = "GOOGLE"
+    
+    await db.commit()
+    
+    return RedirectResponse(url=f"{config.settings.app_base_url}/profile?connected=google")
+
+@app.delete("/api/users/me/disconnect/discord")
+async def disconnect_discord(request: Request, db: AsyncSession = Depends(get_db)):
+    current_user = await auth.get_current_user(request, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if not current_user.discord_id:
+        raise HTTPException(status_code=400, detail="Discord account not connected")
+    
+    if not current_user.google_id:
+        raise HTTPException(status_code=400, detail="Cannot disconnect last account")
+    
+    if current_user.avatar_source == "DISCORD":
+        if current_user.google_avatar_url:
+            current_user.avatar_url = current_user.google_avatar_url
+            current_user.avatar_source = "GOOGLE"
+        else:
+            current_user.avatar_url = None
+            current_user.avatar_source = "DEFAULT"
+    
+    current_user.discord_id = None
+    current_user.discord_avatar_url = None
+    current_user.discord_username = None
+    
+    await db.commit()
+    
+    return {"status": "success", "message": "Discord account disconnected"}
+
+@app.delete("/api/users/me/disconnect/google")
+async def disconnect_google(request: Request, db: AsyncSession = Depends(get_db)):
+    current_user = await auth.get_current_user(request, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if not current_user.google_id:
+        raise HTTPException(status_code=400, detail="Google account not connected")
+    
+    if not current_user.discord_id:
+        raise HTTPException(status_code=400, detail="Cannot disconnect last account")
+    
+    if current_user.avatar_source == "GOOGLE":
+        if current_user.discord_avatar_url:
+            current_user.avatar_url = current_user.discord_avatar_url
+            current_user.avatar_source = "DISCORD"
+        else:
+            current_user.avatar_url = None
+            current_user.avatar_source = "DEFAULT"
+    
+    current_user.google_id = None
+    current_user.google_avatar_url = None
+    current_user.google_username = None
+    
+    await db.commit()
+    
+    return {"status": "success", "message": "Google account disconnected"}
+
+@app.delete("/api/users/me")
+async def delete_account(request: Request, db: AsyncSession = Depends(get_db)):
+    current_user = await auth.get_current_user(request, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    user_id = current_user.id
+    
+    suggestions = (await db.execute(
+        select(models.Suggestion).where(models.Suggestion.user_id == user_id)
+    )).scalars().all()
+    for suggestion in suggestions:
+        await db.delete(suggestion)
+    
+    votes = (await db.execute(
+        select(models.Vote).where(models.Vote.user_id == user_id)
+    )).scalars().all()
+    for vote in votes:
+        await db.delete(vote)
+    
+    xp_awards = (await db.execute(
+        select(models.XpAward).where(models.XpAward.user_id == user_id)
+    )).scalars().all()
+    for xp_award in xp_awards:
+        await db.delete(xp_award)
+    
+    user_badges = (await db.execute(
+        select(models.UserBadge).where(models.UserBadge.user_id == user_id)
+    )).scalars().all()
+    for user_badge in user_badges:
+        await db.delete(user_badge)
+    
+    listening_sessions = (await db.execute(
+        select(models.ListeningSession).where(models.ListeningSession.user_id == user_id)
+    )).scalars().all()
+    for session in listening_sessions:
+        await db.delete(session)
+    
+    await db.delete(current_user)
+    await db.commit()
+    
+    request.session.clear()
+    
+    return {"status": "success", "message": "Account deleted"}
 
 @app.put("/api/users/me/badges/feature")
 async def feature_badge(request: Request, feature_req: FeatureBadgeRequest, db: AsyncSession = Depends(get_db)):
