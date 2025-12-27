@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   useSearchParams,
+  Navigate,
 } from "react-router-dom";
 import { UserProvider } from "./contexts/UserContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -45,7 +46,7 @@ function AppContent() {
         <Route path="/worst-charts" element={<WorstChartsPage />} />
         <Route path="/requests" element={<RequestsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings" element={<Navigate to="/profile" replace />} />
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />

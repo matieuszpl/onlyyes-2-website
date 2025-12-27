@@ -14,6 +14,8 @@ class User(Base):
     reputation_score = Column(Integer, default=0) # Punkty za dobry gust
     xp = Column(Integer, default=0) # Punkty doświadczenia
     featured_badge_id = Column(Integer, ForeignKey("badges.id"), nullable=True)
+    hide_activity = Column(Boolean, default=False) # Ukryj aktywność w rankingu
+    hide_activity_history = Column(Boolean, default=False) # Ukryj aktywność w historii na stronie głównej
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Suggestion(Base):

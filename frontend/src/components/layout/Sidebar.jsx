@@ -5,7 +5,6 @@ import {
   TrendingUp,
   TrendingDown,
   User,
-  Settings,
   LogOut,
   Calendar,
   Monitor,
@@ -38,14 +37,14 @@ export default function Sidebar({ isOpen, onClose }) {
     { path: "/", icon: Home, label: "GŁÓWNA" },
     { path: "/charts", icon: TrendingUp, label: "LISTA PRZEBOJÓW" },
     { path: "/worst-charts", icon: TrendingDown, label: "LISTA GNIOTÓW" },
-    { path: "/requests", icon: Music, label: "PROPOZYCJE" },
     { path: "/schedule", icon: Calendar, label: "KALENDARZ" },
-    { path: "/leaderboard", icon: Trophy, label: "RANKING" },
-    { path: "/badges", icon: Award, label: "OSIĄGNIĘCIA" },
     { path: "/changelog", icon: GitBranch, label: "CHANGELOG" },
   ];
 
   if (user) {
+    navItems.push({ path: "/leaderboard", icon: Trophy, label: "RANKING" });
+    navItems.push({ path: "/requests", icon: Music, label: "PROPOZYCJE" });
+    navItems.push({ path: "/badges", icon: Award, label: "OSIĄGNIĘCIA" });
     navItems.push({ path: "/profile", icon: User, label: "PROFIL" });
     if (user.is_admin) {
       navItems.push({ path: "/admin", icon: Shield, label: "ADMIN" });
@@ -391,14 +390,6 @@ export default function Sidebar({ isOpen, onClose }) {
           <Monitor size={16} />
           KIOSK
         </button>
-        <Link
-          to="/settings"
-          onClick={handleLinkClick}
-          className="flex items-center gap-2.5 px-3 py-2 font-mono text-xs text-text-secondary hover:text-primary hover:bg-white/5 rounded-sm transition-all"
-        >
-          <Settings size={16} />
-          USTAWIENIA
-        </Link>
         {user && (
           <button
             onClick={handleLogout}
@@ -430,7 +421,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed left-0 top-0 h-full w-64 bg-black/95 backdrop-blur-xl border-r border-white/5 flex-col z-50 md:hidden flex"
+                className="fixed left-0 top-0 h-full w-64 bg-black/95 backdrop-blur-xl border-r border-white/5 flex-col z-50 md:hidden flex pb-16"
               >
                 {sidebarContent}
               </motion.aside>

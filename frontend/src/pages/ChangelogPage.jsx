@@ -36,11 +36,13 @@ const changelogData = [
     entries: {
       "Nowe funkcjonalności": [
         "Dodano uniwersalny komponent przycisków",
+        "Dodano ustawienia prywatności - możliwość ukrycia aktywności w rankingu i historii",
       ],
       "UI/UX": [
         "Ujednolicono style przycisków w całej aplikacji",
         "Ulepszono wygląd nagłówków stron",
         "Ulepszono wygląd sidebaru",
+        "Ukryto niektóre linki w sidebarze dla niezalogowanych użytkowników",
         "Ulepszono responsywność przycisków w trybie kiosk",
         "Ulepszono wygląd profilu użytkownika i komponentów profilu",
         "Ulepszono wygląd strony odznak",
@@ -48,9 +50,13 @@ const changelogData = [
         "Ulepszono wygląd feedu aktywności",
         "Ulepszono wygląd strony harmonogramu",
         "Ulepszono wyświetlanie historii XP i aktywności",
+        "Ulepszono wygląd playera radia",
+        "Przeniesiono ustawienia do strony profilu",
+        "Ulepszono layout strony głównej",
       ],
       "Poprawki błędów": [
         "Naprawiono formatowanie czasu w harmonogramie audycji",
+        "Dodano sprawdzenie autoryzacji na stronie rankingu",
       ],
     },
   },

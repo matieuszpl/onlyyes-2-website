@@ -4,7 +4,8 @@ import VoteButtons from "../VoteButtons";
 import ImageGlitch from "../ImageGlitch";
 import Button from "../Button";
 import Card from "../Card";
-import { Play, Pause, Volume2, VolumeX } from "lucide-react";
+import TextGlitch from "../TextGlitch";
+import { Play, Pause, Volume2, VolumeX, Radio } from "lucide-react";
 import { useState } from "react";
 import { useAlbumColors } from "../../hooks/useAlbumColors";
 
@@ -21,94 +22,132 @@ export default function DockedPlayer() {
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
-      className="fixed bottom-16 md:bottom-0 left-0 right-0 md:left-56 z-40"
-      style={{ margin: 0, padding: 0 }}
+      className="fixed bottom-16 md:bottom-0 left-0 right-0 md:left-64 z-40"
     >
       <div
-        className="w-full px-3 sm:px-4 py-2 sm:py-3 border-t border-white/10 relative overflow-hidden"
+        className="border-t border-white/10 backdrop-blur-xl"
         style={{
-          borderRadius: 0,
-          margin: 0,
-          borderBottom: "none",
-          background: "rgba(var(--surface-rgb, 18, 18, 18), 0.95)",
-          backdropFilter: "blur(20px)",
-          boxShadow:
-            "0 -4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+          background: "rgba(var(--surface-rgb, 18, 18, 18), 0.98)",
         }}
       >
-        {nowPlaying.thumbnail && !nowPlayingColors.isDefault ? (
-          <div
-            className="absolute inset-0 opacity-[0.42] blur-[80px] scale-150 -z-10"
-            style={{
-              backgroundImage: `url(${nowPlaying.thumbnail})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          />
-        ) : (
-          <div className="absolute inset-0 opacity-[0.42] blur-[80px] -z-10 bg-gradient-to-br from-gray-600/30 via-gray-500/20 to-gray-700/30" />
-        )}
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-            {/* Left: Vote Buttons + Album Art + Song Info */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-              <div className="hidden md:block shrink-0">
-                <VoteButtons songId={nowPlaying.songId} />
-              </div>
-              {nowPlaying.thumbnail && (
-                <motion.div
-                  layoutId="album-art"
-                  className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 shrink-0 rounded overflow-hidden border border-primary/60 shadow-[0_0_8px_rgba(var(--primary-rgb),0.3)]"
-                >
-                  <ImageGlitch
-                    src={nowPlaying.thumbnail}
-                    alt={nowPlaying.title}
-                    shouldGlitch={shouldGlitch}
-                    className="w-full h-full"
-                  />
-                </motion.div>
-              )}
-              <div className="flex-1 min-w-0">
+        <div className="relative overflow-hidden p-2 sm:p-3 md:p-4">
+          {nowPlaying.thumbnail && !nowPlayingColors.isDefault ? (
+            <div
+              className="absolute inset-0 opacity-[0.42] blur-[80px] scale-150 -z-10"
+              style={{
+                backgroundImage: `url(${nowPlaying.thumbnail})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+          ) : (
+            <div className="absolute inset-0 opacity-[0.42] blur-[80px] -z-10 bg-gradient-to-br from-gray-600/30 via-gray-500/20 to-gray-700/30" />
+          )}
+          <div className="hidden md:flex items-center justify-between mb-2 relative z-10">
+            <div className="flex items-center gap-1.5">
+              <Radio size={14} className="text-primary" />
+              <h2 className="font-header text-xs text-primary uppercase tracking-wider">
+                TERAZ GRANE
+              </h2>
+            </div>
+            <div className="font-mono text-[10px] text-text-secondary border border-primary/30 px-2 py-0.5 rounded bg-primary/10">
+              {isPlaying ? "[LIVE]" : "[PAUZA]"}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 relative z-10">
+            <div className="absolute -left-1 top-0 bottom-0 w-1 bg-gradient-to-b from-accent-cyan to-accent-magenta rounded-full hidden md:block"></div>
+            <div className="hidden md:block shrink-0">
+              <VoteButtons songId={nowPlaying.songId} />
+            </div>
+            {nowPlaying.thumbnail && (
+              <motion.div
+                layoutId="album-art"
+                className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 shrink-0 rounded overflow-hidden border-2 border-primary/60 shadow-[0_0_8px_rgba(var(--primary-rgb),0.3)]"
+              >
+                <ImageGlitch
+                  src={nowPlaying.thumbnail}
+                  alt={nowPlaying.title}
+                  shouldGlitch={shouldGlitch}
+                  className="w-full h-full"
+                />
+              </motion.div>
+            )}
+            <div className="flex-1 min-w-0 sm:flex-1">
+              {shouldGlitch ? (
+                <TextGlitch
+                  text={nowPlaying.title || "BRAK UTWORU"}
+                  altTexts={[
+                    (nowPlaying.title || "BRAK UTWORU").toUpperCase(),
+                    (nowPlaying.title || "BRAK UTWORU")
+                      .split("")
+                      .map((c) => {
+                        if (c === " ") return " ";
+                        const chars = "0123456789!@#$%^&*()[]{}|\\/<>?~`";
+                        return Math.random() > 0.6
+                          ? chars[Math.floor(Math.random() * chars.length)]
+                          : c;
+                      })
+                      .join(""),
+                  ]}
+                  className="font-header text-xs sm:text-sm font-bold text-text-primary truncate"
+                />
+              ) : (
                 <motion.div
                   layoutId="song-title"
-                  className="font-header text-xs sm:text-sm text-primary truncate"
+                  className="font-header text-xs sm:text-sm font-bold text-text-primary truncate"
                 >
                   {nowPlaying.title || "BRAK UTWORU"}
                 </motion.div>
+              )}
+              {shouldGlitch ? (
+                <TextGlitch
+                  text={nowPlaying.artist || "BRAK ARTYSTY"}
+                  altTexts={[
+                    (nowPlaying.artist || "BRAK ARTYSTY").toUpperCase(),
+                    (nowPlaying.artist || "BRAK ARTYSTY")
+                      .split("")
+                      .map((c) => {
+                        if (c === " ") return " ";
+                        const chars = "0123456789!@#$%^&*()[]{}|\\/<>?~`";
+                        return Math.random() > 0.6
+                          ? chars[Math.floor(Math.random() * chars.length)]
+                          : c;
+                      })
+                      .join(""),
+                  ]}
+                  className="font-mono text-[10px] sm:text-xs text-text-secondary truncate"
+                />
+              ) : (
                 <motion.div
                   layoutId="song-artist"
                   className="font-mono text-[10px] sm:text-xs text-text-secondary truncate"
                 >
                   {nowPlaying.artist || "BRAK ARTYSTY"}
                 </motion.div>
-              </div>
+              )}
             </div>
-
-            {/* Center: Play Controls */}
-            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-              <Button
-                onClick={togglePlay}
-                variant={isPlaying ? "cyan" : "default"}
-                size="sm"
-                className="flex items-center gap-2"
-                aria-label={isPlaying ? "Pause" : "Play"}
-              >
-                {isPlaying ? (
-                  <>
-                    <Pause size={14} className="sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">STOP</span>
-                  </>
-                ) : (
-                  <>
-                    <Play size={14} className="sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">PLAY</span>
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {/* Right: Volume */}
-            <div className="hidden sm:flex items-center gap-2 md:gap-3 shrink-0">
+          </div>
+          <div className="hidden sm:flex items-center gap-2 md:gap-3 mt-2 sm:mt-3 relative z-10">
+            <Button
+              onClick={togglePlay}
+              variant={isPlaying ? "cyan" : "default"}
+              size="sm"
+              className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5"
+              aria-label={isPlaying ? "Pause" : "Play"}
+            >
+              {isPlaying ? (
+                <>
+                  <Pause size={14} className="sm:w-4 sm:h-4" />
+                  <span>STOP</span>
+                </>
+              ) : (
+                <>
+                  <Play size={14} className="sm:w-4 sm:h-4" />
+                  <span>PLAY</span>
+                </>
+              )}
+            </Button>
+            <div className="flex items-center gap-2 md:gap-3 shrink-0">
               <div className="relative">
                 <button
                   onClick={() => setIsVolumeVisible(!isVolumeVisible)}
@@ -141,15 +180,34 @@ export default function DockedPlayer() {
                 </AnimatePresence>
               </div>
             </div>
-
-            {/* Mobile: Vote Buttons Only */}
-            <div className="sm:hidden shrink-0">
+          </div>
+          <div className="sm:hidden flex items-center gap-2 mt-2 relative z-10">
+            <div className="flex-1 [&>div]:flex-row [&>div]:gap-1">
               <VoteButtons songId={nowPlaying.songId} />
             </div>
+            <div className="flex-1">
+              <Button
+                onClick={togglePlay}
+                variant={isPlaying ? "cyan" : "default"}
+                size="sm"
+                className="w-full flex items-center justify-center gap-1.5 text-xs px-3 py-2.5"
+                aria-label={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? (
+                  <>
+                    <Pause size={14} />
+                    <span>STOP</span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={14} />
+                    <span>PLAY</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-
-          {/* Mobile: Volume Slider */}
-          <div className="sm:hidden mt-2 flex items-center gap-2">
+          <div className="sm:hidden mt-2 flex items-center gap-2 relative z-10">
             <Volume2 size={14} className="text-text-secondary shrink-0" />
             <input
               type="range"

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { cn } from "../../utils/cn";
 import Sidebar from "./Sidebar";
 import BottomNav from "./BottomNav";
 import DockedPlayer from "../player/DockedPlayer";
@@ -19,7 +20,7 @@ export default function LayoutManager({ children }) {
   return (
     <div className="min-h-screen flex">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="flex-1 md:ml-64 pb-32 md:pb-24 w-full max-w-full overflow-x-hidden">
+      <main className="flex-1 md:ml-64 w-full max-w-full overflow-x-hidden">
         <AnimatePresence key={location.pathname}>
           <motion.div
             key={location.pathname}
@@ -27,7 +28,11 @@ export default function LayoutManager({ children }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            className="w-full max-w-full px-2 sm:px-3 md:px-6 lg:px-8 py-3 sm:py-4"
+            className={cn(
+              "w-full max-w-full px-2 sm:px-3 md:px-6 lg:px-8 py-3 sm:py-4",
+              "pb-48 md:pb-0",
+              !isHome && "md:pb-48"
+            )}
           >
             {children}
           </motion.div>

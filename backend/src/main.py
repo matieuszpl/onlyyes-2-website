@@ -241,6 +241,30 @@ async def lifespan(app: FastAPI):
             await conn.run_sync(Base.metadata.create_all)
             logger.info("Created xp_awards table")
         
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='hide_activity'
+        """))
+        hide_activity_exists = result.scalar() is not None
+        
+        if not hide_activity_exists:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN hide_activity BOOLEAN DEFAULT FALSE"))
+            await conn.execute(text("UPDATE users SET hide_activity = FALSE WHERE hide_activity IS NULL"))
+            logger.info("Added hide_activity column to users table")
+        
+        result = await conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='hide_activity_history'
+        """))
+        hide_activity_history_exists = result.scalar() is not None
+        
+        if not hide_activity_history_exists:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN hide_activity_history BOOLEAN DEFAULT FALSE"))
+            await conn.execute(text("UPDATE users SET hide_activity_history = FALSE WHERE hide_activity_history IS NULL"))
+            logger.info("Added hide_activity_history column to users table")
+        
         await initialize_default_badges(conn)
     
     task1 = asyncio.create_task(background_polling())
@@ -591,13 +615,16 @@ async def read_users_me(request: Request, db: AsyncSession = Depends(get_db)):
         
         return {
             "is_logged_in": True,
+            "id": user.id,
             "username": user.username,
             "avatar": user.avatar_url,
             "is_admin": user.is_admin,
             "reputation_score": user.reputation_score,
             "xp": xp,
             "rank": rank_info,
-            "featured_badge": featured_badge
+            "featured_badge": featured_badge,
+            "hide_activity": user.hide_activity or False,
+            "hide_activity_history": user.hide_activity_history or False
         }
     return {"is_logged_in": False}
 
@@ -1409,6 +1436,7 @@ async def get_user_stats(request: Request, db: AsyncSession = Depends(get_db)):
 async def get_leaderboard(limit: int = 100, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(models.User)
+        .where(models.User.hide_activity == False)
         .order_by(desc(models.User.xp))
         .limit(limit)
     )
@@ -1526,6 +1554,7 @@ async def get_activity(limit: int = 20, db: AsyncSession = Depends(get_db)):
         votes_result = await db.execute(
             select(models.Vote, models.User)
             .join(models.User, models.Vote.user_id == models.User.id)
+            .where(models.User.hide_activity_history == False)
             .order_by(desc(models.Vote.created_at))
             .limit(limit // 2)
         )
@@ -1558,6 +1587,7 @@ async def get_activity(limit: int = 20, db: AsyncSession = Depends(get_db)):
         suggestions_result = await db.execute(
             select(models.Suggestion, models.User)
             .join(models.User, models.Suggestion.user_id == models.User.id)
+            .where(models.User.hide_activity_history == False)
             .order_by(desc(models.Suggestion.created_at))
             .limit(limit // 2)
         )
@@ -1987,6 +2017,29 @@ async def get_my_badges(request: Request, db: AsyncSession = Depends(get_db)):
 
 class FeatureBadgeRequest(BaseModel):
     badge_id: Optional[int] = None
+
+class UserSettingsRequest(BaseModel):
+    hide_activity: Optional[bool] = None
+    hide_activity_history: Optional[bool] = None
+
+@app.put("/api/users/me/settings")
+async def update_user_settings(request: Request, settings_req: UserSettingsRequest, db: AsyncSession = Depends(get_db)):
+    user = await auth.get_current_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if settings_req.hide_activity is not None:
+        user.hide_activity = settings_req.hide_activity
+    
+    if settings_req.hide_activity_history is not None:
+        user.hide_activity_history = settings_req.hide_activity_history
+    
+    await db.commit()
+    return {
+        "status": "success",
+        "hide_activity": user.hide_activity,
+        "hide_activity_history": user.hide_activity_history
+    }
 
 @app.put("/api/users/me/badges/feature")
 async def feature_badge(request: Request, feature_req: FeatureBadgeRequest, db: AsyncSession = Depends(get_db)):

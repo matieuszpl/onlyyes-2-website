@@ -50,9 +50,8 @@ export default function HomePage() {
           />
         </div>
         <div className="flex items-center gap-2 mt-2 sm:mt-3 md:mt-4">
-          <Home className="text-primary" size={16} />
           <h3 className="font-mono text-xs sm:text-sm text-text-secondary">
-            RADIO INTERNETOWE
+            PRYWATNE RADIO INTERNETOWE
           </h3>
         </div>
       </motion.div>

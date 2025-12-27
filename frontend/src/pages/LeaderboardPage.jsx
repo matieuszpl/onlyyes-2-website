@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
 import { Music, Clock, Trophy, Star, Award } from "lucide-react";
 import api from "../api";
@@ -28,12 +29,17 @@ function XPProgressBar({ progress, nextRankXp }) {
 
 export default function LeaderboardPage() {
   const { user } = useUser();
+  const navigate = useNavigate();
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) {
+      navigate("/");
+      return;
+    }
     loadLeaderboard();
-  }, []);
+  }, [user, navigate]);
 
   const loadLeaderboard = async () => {
     try {
