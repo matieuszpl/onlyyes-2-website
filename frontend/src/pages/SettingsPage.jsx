@@ -2,7 +2,7 @@ import ThemeSwitcher from "../components/ThemeSwitcher";
 import { useGlobalAudio } from "../contexts/GlobalAudioContext";
 import { useUser } from "../contexts/UserContext";
 import { useState, useEffect } from "react";
-import PageHeader from "../components/layout/PageHeader";
+import SectionHeader from "../components/SectionHeader";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import api from "../api";
@@ -52,7 +52,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader subtitle="Skonfiguruj swoje doświadczenie" />
+      <SectionHeader description="Skonfiguruj swoje doświadczenie" useRouteData size="large" />
 
       <Card padding="p-6" className="space-y-6">
         <div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "../contexts/UserContext";
 import api from "../api";
-import PageHeader from "../components/layout/PageHeader";
+import SectionHeader from "../components/SectionHeader";
 import Card from "../components/Card";
 import {
   Award,
@@ -331,17 +331,13 @@ export default function BadgesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3 mb-8">
-        <Award className="text-primary shrink-0" size={56} />
-        <div>
-          <h1 className="font-header text-4xl text-primary uppercase tracking-wider mb-0.5">
-            OSIĄGNIĘCIA
-          </h1>
-          <p className="font-mono text-sm text-text-secondary">
-            Wszystkie dostępne osiągnięcia
-          </p>
-        </div>
-      </div>
+      <SectionHeader 
+        icon={Award}
+        title="OSIĄGNIĘCIA"
+        description="Wszystkie dostępne osiągnięcia"
+        useRouteData
+        size="large"
+      />
 
       {renderSplitScreen()}
     </div>

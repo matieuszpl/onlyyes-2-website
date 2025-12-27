@@ -3,6 +3,7 @@ import { Music, Heart, UserPlus, Radio, Activity, ThumbsUp, ThumbsDown } from "l
 import api from "../api";
 import UserTooltip from "./UserTooltip";
 import Card from "./Card";
+import SectionHeader from "./SectionHeader";
 import ImageGlitch from "./ImageGlitch";
 import { getIconComponent } from "../utils/badgeIcons";
 
@@ -148,13 +149,13 @@ export default function ActivityFeed() {
   };
 
   return (
-    <Card className="space-y-2 relative">
-      <div className="flex items-center gap-2 mb-2">
-        <Activity size={14} className="text-primary" />
-        <h3 className="font-header text-sm text-primary uppercase tracking-wider">
-          AKTYWNOŚĆ
-        </h3>
-      </div>
+    <Card className="space-y-4 relative">
+      <SectionHeader
+        icon={Activity}
+        title="AKTYWNOŚĆ"
+        iconGradient="linear-gradient(135deg, rgba(57, 255, 20, 0.65) 0%, rgba(57, 255, 20, 0.40) 50%, transparent 100%)"
+        iconColor="rgba(57, 255, 20, 1)"
+      />
 
       {loading ? (
         <div className="space-y-2">

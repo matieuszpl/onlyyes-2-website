@@ -6,6 +6,7 @@ import ImageGlitch from "./ImageGlitch";
 import { useRadioEvents } from "../contexts/RadioEventsContext";
 import { useAlbumColors } from "../hooks/useAlbumColors";
 import Card from "./Card";
+import SectionHeader from "./SectionHeader";
 
 const DEFAULT_ALBUM_ART =
   "https://azura.onlyyes.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
@@ -62,13 +63,13 @@ export default function SongHistory() {
   }, [recentSongs]);
 
   return (
-    <Card className="space-y-2">
-      <div className="flex items-center gap-2">
-        <History size={16} className="text-primary" />
-        <h3 className="font-header text-sm text-primary uppercase tracking-wider">
-          HISTORIA UTWORÓW
-        </h3>
-      </div>
+    <Card className="space-y-4">
+      <SectionHeader
+        icon={History}
+        title="HISTORIA UTWORÓW"
+        iconGradient="linear-gradient(135deg, rgba(var(--accent-cyan-rgb), 0.65) 0%, rgba(var(--accent-cyan-rgb), 0.40) 50%, transparent 100%)"
+        iconColor="rgba(var(--accent-cyan-rgb), 1)"
+      />
 
       {loading ? (
         <div className="space-y-2">

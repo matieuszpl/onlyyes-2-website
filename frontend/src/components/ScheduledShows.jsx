@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Calendar } from "lucide-react";
 import api from "../api";
 import Card from "./Card";
+import SectionHeader from "./SectionHeader";
 
 export default function ScheduledShows() {
   const [shows, setShows] = useState([]);
@@ -174,21 +175,21 @@ export default function ScheduledShows() {
   };
 
   return (
-    <Card className="space-y-2 relative">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Calendar size={16} className="text-primary" />
-          <h3 className="font-header text-sm text-primary uppercase tracking-wider">
-            AUDYCJE
-          </h3>
-        </div>
-        <Link
-          to="/schedule"
-          className="font-mono text-[10px] text-primary hover:text-primary-alt"
-        >
-          ZOBACZ WSZYSTKIE →
-        </Link>
-      </div>
+    <Card className="space-y-4 relative">
+      <SectionHeader
+        icon={Calendar}
+        title="AUDYCJE"
+        iconGradient="linear-gradient(135deg, rgba(var(--accent-magenta-rgb), 0.65) 0%, rgba(var(--accent-magenta-rgb), 0.40) 50%, transparent 100%)"
+        iconColor="rgba(var(--accent-magenta-rgb), 1)"
+        actions={
+          <Link
+            to="/schedule"
+            className="font-mono text-[10px] text-primary hover:text-primary-alt"
+          >
+            ZOBACZ WSZYSTKIE →
+          </Link>
+        }
+      />
 
       <div className="space-y-2">
         <div className="p-2 bg-primary/20 border border-primary rounded-sm">
@@ -283,11 +284,7 @@ export default function ScheduledShows() {
                       {upcomingShows.map((show, idx) => {
                         const isToday = idx < upcomingToday.length;
                         return (
-                          <Card
-                            key={show.id}
-                            as={motion.div}
-                padding="p-2"
-                          >
+                          <Card key={show.id} as={motion.div} padding="p-2">
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1 min-w-0">
                                 <div className="font-header text-[10px] text-text-primary mb-0.5 truncate">

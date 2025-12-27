@@ -30,8 +30,8 @@ export default function LayoutManager({ children }) {
             transition={{ duration: 0.2 }}
             className={cn(
               "w-full max-w-full px-2 sm:px-3 md:px-6 lg:px-8 py-3 sm:py-4",
-              "pb-48 md:pb-0",
-              !isHome && "md:pb-48"
+              "pb-56 md:pb-0",
+              !isHome && "md:pb-24"
             )}
           >
             {children}

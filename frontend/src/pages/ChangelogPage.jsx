@@ -15,6 +15,7 @@ import api from "../api";
 import TextGlitch from "../components/TextGlitch";
 import Card from "../components/Card";
 import Button from "../components/Button";
+import SectionHeader from "../components/SectionHeader";
 
 const categoryIcons = {
   "Nowe funkcjonalności": Sparkles,
@@ -35,12 +36,19 @@ const changelogData = [
     date: "2025-12-27",
     entries: {
       "Nowe funkcjonalności": [
+        "Dodano obsługę playlist w formularzu propozycji utworów",
+        "Dodano możliwość masowego przesyłania utworów z Google Drive",
+        "Dodano historię propozycji utworów z wyświetlaniem statusu",
+        "Dodano animacje cyfr w wyświetlaczu czasu",
         "Dodano uniwersalny komponent przycisków",
         "Dodano ustawienia prywatności - możliwość ukrycia aktywności w rankingu i historii",
       ],
       "UI/UX": [
+        "Ulepszono wygląd formularza propozycji utworów z animacjami i lepszą obsługą błędów",
+        "Ulepszono wygląd playera radia - uproszczono interfejs",
+        "Ulepszono nagłówki stron - dodano gradienty i kolory dla różnych sekcji",
+        "Dodano uniwersalny komponent nagłówków sekcji",
         "Ujednolicono style przycisków w całej aplikacji",
-        "Ulepszono wygląd nagłówków stron",
         "Ulepszono wygląd sidebaru",
         "Ukryto niektóre linki w sidebarze dla niezalogowanych użytkowników",
         "Ulepszono responsywność przycisków w trybie kiosk",
@@ -50,11 +58,12 @@ const changelogData = [
         "Ulepszono wygląd feedu aktywności",
         "Ulepszono wygląd strony harmonogramu",
         "Ulepszono wyświetlanie historii XP i aktywności",
-        "Ulepszono wygląd playera radia",
         "Przeniesiono ustawienia do strony profilu",
         "Ulepszono layout strony głównej",
       ],
       "Poprawki błędów": [
+        "Dodano sprawdzanie duplikatów propozycji utworów",
+        "Poprawiono obsługę błędów w formularzu propozycji",
         "Naprawiono formatowanie czasu w harmonogramie audycji",
         "Dodano sprawdzenie autoryzacji na stronie rankingu",
       ],
@@ -265,18 +274,13 @@ function IssueReportWidget() {
 export default function ChangelogPage() {
   return (
     <div className="space-y-6">
-
-      <div className="flex items-start gap-3 mb-8">
-        <GitBranch className="text-primary shrink-0" size={56} />
-        <div>
-          <h1 className="font-header text-4xl text-primary uppercase tracking-wider mb-0.5">
-            CHANGELOG
-          </h1>
-          <p className="font-mono text-sm text-text-secondary">
-            Historia aktualizacji projektu
-          </p>
-        </div>
-      </div>
+      <SectionHeader 
+        icon={GitBranch}
+        title="CHANGELOG"
+        description="Historia aktualizacji projektu"
+        useRouteData
+        size="large"
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4 lg:sticky lg:top-6 lg:self-start">

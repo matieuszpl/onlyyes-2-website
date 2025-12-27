@@ -3,7 +3,7 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  AlertTriangle,
+  ThumbsDown,
   Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -11,6 +11,7 @@ import ImageGlitch from "./ImageGlitch";
 import { useAlbumColors } from "../hooks/useAlbumColors";
 import api from "../api";
 import Card from "./Card";
+import SectionHeader from "./SectionHeader";
 
 const DEFAULT_ALBUM_ART =
   "https://azura.onlyyes.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
@@ -92,52 +93,48 @@ export default function WorstChartsPreview({ limit = 10 }) {
   };
 
   return (
-    <Card className="space-y-3 relative">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-0">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={18} className="text-red-500" />
-            <h3 className="font-header text-sm text-primary uppercase tracking-wider">
-              NAJGORSZE {limit}
-            </h3>
-          </div>
-          <div className="font-mono text-[10px] text-text-secondary ml-7 -mt-0.5">
-            {getPeriodLabel(selectedPeriod)}
-          </div>
-        </div>
-        <div className="flex gap-1">
-          <button
-            onClick={() => setSelectedPeriod("week")}
-            className={`px-2 py-1 font-mono text-xs border transition-all ${
-              selectedPeriod === "week"
-                ? "bg-red-500/20 border-red-500 text-red-500"
-                : "bg-white/10 border-white/10 text-text-primary hover:border-red-500/50"
-            }`}
-          >
-            T
-          </button>
-          <button
-            onClick={() => setSelectedPeriod("month")}
-            className={`px-2 py-1 font-mono text-xs border transition-all ${
-              selectedPeriod === "month"
-                ? "bg-red-500/20 border-red-500 text-red-500"
-                : "bg-white/10 border-white/10 text-text-primary hover:border-red-500/50"
-            }`}
-          >
-            M
-          </button>
-          <button
-            onClick={() => setSelectedPeriod("all")}
-            className={`px-2 py-1 font-mono text-xs border transition-all ${
-              selectedPeriod === "all"
-                ? "bg-red-500/20 border-red-500 text-red-500"
-                : "bg-white/10 border-white/10 text-text-primary hover:border-red-500/50"
-            }`}
-          >
-            W
-          </button>
-        </div>
-      </div>
+    <Card className="space-y-4 relative">
+      <SectionHeader
+        icon={ThumbsDown}
+        title={`NAJGORSZE ${limit}`}
+        description={getPeriodLabel(selectedPeriod)}
+              iconGradient="linear-gradient(135deg, rgba(255, 20, 20, 0.65) 0%, rgba(255, 20, 20, 0.40) 50%, transparent 100%)"
+              iconColor="rgba(255, 20, 20, 1)"
+        actions={
+          <>
+            <button
+              onClick={() => setSelectedPeriod("week")}
+              className={`px-2 py-1 font-mono text-xs border transition-all ${
+                selectedPeriod === "week"
+                  ? "bg-red-500/20 border-red-500 text-red-500"
+                  : "bg-white/10 border-white/10 text-text-primary hover:border-red-500/50"
+              }`}
+            >
+              T
+            </button>
+            <button
+              onClick={() => setSelectedPeriod("month")}
+              className={`px-2 py-1 font-mono text-xs border transition-all ${
+                selectedPeriod === "month"
+                  ? "bg-red-500/20 border-red-500 text-red-500"
+                  : "bg-white/10 border-white/10 text-text-primary hover:border-red-500/50"
+              }`}
+            >
+              M
+            </button>
+            <button
+              onClick={() => setSelectedPeriod("all")}
+              className={`px-2 py-1 font-mono text-xs border transition-all ${
+                selectedPeriod === "all"
+                  ? "bg-red-500/20 border-red-500 text-red-500"
+                  : "bg-white/10 border-white/10 text-text-primary hover:border-red-500/50"
+              }`}
+            >
+              W
+            </button>
+          </>
+        }
+      />
 
       {loading ? (
         <div className="space-y-2">

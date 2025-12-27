@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, Minus, Trophy, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Crown, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import ImageGlitch from "./ImageGlitch";
 import { useAlbumColors } from "../hooks/useAlbumColors";
 import api from "../api";
 import Card from "./Card";
+import SectionHeader from "./SectionHeader";
 
 const DEFAULT_ALBUM_ART =
   "https://azura.onlyyes.pl/static/uploads/kana%C5%82_g%C5%82%C3%B3wny/album_art.1763409726.png";
@@ -86,52 +87,48 @@ export default function TopCharts({ limit = 10 }) {
   };
 
   return (
-    <Card className="space-y-3 relative">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-0">
-          <div className="flex items-center gap-2">
-            <Trophy size={18} className="text-primary" />
-            <h3 className="font-header text-sm text-primary uppercase tracking-wider">
-              TOP {limit}
-            </h3>
-          </div>
-          <div className="font-mono text-[10px] text-text-secondary ml-7 -mt-0.5">
-            {getPeriodLabel(selectedPeriod)}
-          </div>
-        </div>
-        <div className="flex gap-1">
-          <button
-            onClick={() => setSelectedPeriod("week")}
-            className={`px-2 py-1 font-mono text-xs border transition-all ${
-              selectedPeriod === "week"
-                ? "bg-primary/20 border-primary text-primary"
-                : "bg-white/10 border-white/10 text-text-primary hover:border-primary/50"
-            }`}
-          >
-            T
-          </button>
-          <button
-            onClick={() => setSelectedPeriod("month")}
-            className={`px-2 py-1 font-mono text-xs border transition-all ${
-              selectedPeriod === "month"
-                ? "bg-primary/20 border-primary text-primary"
-                : "bg-white/10 border-white/10 text-text-primary hover:border-primary/50"
-            }`}
-          >
-            M
-          </button>
-          <button
-            onClick={() => setSelectedPeriod("all")}
-            className={`px-2 py-1 font-mono text-xs border transition-all ${
-              selectedPeriod === "all"
-                ? "bg-primary/20 border-primary text-primary"
-                : "bg-white/10 border-white/10 text-text-primary hover:border-primary/50"
-            }`}
-          >
-            W
-          </button>
-        </div>
-      </div>
+    <Card className="space-y-4 relative">
+      <SectionHeader
+        icon={Crown}
+        title={`TOP ${limit}`}
+        description={getPeriodLabel(selectedPeriod)}
+              iconGradient="linear-gradient(135deg, rgba(255, 234, 0, 0.65) 0%, rgba(255, 234, 0, 0.40) 50%, transparent 100%)"
+              iconColor="rgba(255, 234, 0, 1)"
+        actions={
+          <>
+            <button
+              onClick={() => setSelectedPeriod("week")}
+              className={`px-2 py-1 font-mono text-xs border transition-all ${
+                selectedPeriod === "week"
+                  ? "bg-primary/20 border-primary text-primary"
+                  : "bg-white/10 border-white/10 text-text-primary hover:border-primary/50"
+              }`}
+            >
+              T
+            </button>
+            <button
+              onClick={() => setSelectedPeriod("month")}
+              className={`px-2 py-1 font-mono text-xs border transition-all ${
+                selectedPeriod === "month"
+                  ? "bg-primary/20 border-primary text-primary"
+                  : "bg-white/10 border-white/10 text-text-primary hover:border-primary/50"
+              }`}
+            >
+              M
+            </button>
+            <button
+              onClick={() => setSelectedPeriod("all")}
+              className={`px-2 py-1 font-mono text-xs border transition-all ${
+                selectedPeriod === "all"
+                  ? "bg-primary/20 border-primary text-primary"
+                  : "bg-white/10 border-white/10 text-text-primary hover:border-primary/50"
+              }`}
+            >
+              W
+            </button>
+          </>
+        }
+      />
 
       {loading ? (
         <div className="space-y-2">

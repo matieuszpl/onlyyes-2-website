@@ -17,7 +17,7 @@ import {
   Bug,
   Lightbulb,
 } from "lucide-react";
-import PageHeader from "../components/layout/PageHeader";
+import SectionHeader from "../components/SectionHeader";
 import UserTooltip from "../components/UserTooltip";
 import { getIconComponent } from "../utils/badgeIcons";
 
@@ -181,7 +181,7 @@ export default function AdminPanel() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="PANEL ADMINISTRATORA" />
+      <SectionHeader title="PANEL ADMINISTRATORA" useRouteData size="large" />
 
       <div className="flex gap-2 border-b border-white/10 mb-4">
         {tabs.map((tab) => {

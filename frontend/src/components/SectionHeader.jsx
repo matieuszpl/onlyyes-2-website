@@ -74,59 +74,85 @@ const routeIconColors = {
   "/achievements": "rgba(57, 255, 20, 1)",
 };
 
-export default function PageHeader({ title, icon, subtitle, iconGradient, iconColor }) {
+export default function SectionHeader({
+  icon: Icon,
+  title,
+  description,
+  subtitle,
+  actions,
+  iconGradient,
+  iconColor,
+  className = "",
+  useRouteData = false,
+  size = "default",
+}) {
   const location = useLocation();
-  const Icon = icon || routeIcons[location.pathname];
-  const pageTitle = title || routeTitles[location.pathname] || "";
-  const pageSubtitle = subtitle || routeSubtitles[location.pathname];
   const defaultGradient = "linear-gradient(135deg, rgba(0, 243, 255, 0.60) 0%, rgba(0, 243, 255, 0.35) 50%, transparent 100%)";
   const defaultColor = "rgba(0, 243, 255, 1)";
-  const gradient = iconGradient || routeIconGradients[location.pathname] || defaultGradient;
-  const color = iconColor || routeIconColors[location.pathname] || defaultColor;
-
+  
+  let finalIcon = Icon;
+  let finalTitle = title;
+  let finalDescription = description || subtitle;
+  let finalGradient = iconGradient || defaultGradient;
+  let finalColor = iconColor || defaultColor;
+  
+  if (useRouteData) {
+    finalIcon = finalIcon || routeIcons[location.pathname];
+    finalTitle = finalTitle || routeTitles[location.pathname] || "";
+    finalDescription = finalDescription || routeSubtitles[location.pathname];
+    finalGradient = iconGradient || routeIconGradients[location.pathname] || defaultGradient;
+    finalColor = iconColor || routeIconColors[location.pathname] || defaultColor;
+  }
+  
+  const titleSize = size === "large" ? "text-4xl" : "text-lg";
+  const containerClass = size === "large" ? "mb-8" : "";
+  const IconComponent = finalIcon;
+  
   return (
-    <div className="mb-8">
-      <div className="flex items-stretch gap-2">
-        {Icon && (
+    <div className={`flex items-stretch justify-between ${containerClass} ${className}`}>
+      <div className="flex items-center gap-2">
+        {IconComponent && (
           <div 
             className="flex items-center justify-center shrink-0 self-stretch relative"
             style={{
-              background: gradient,
-              border: `1px solid ${color.replace('1)', '0.6)')}`,
+              background: finalGradient,
+              border: `1px solid ${finalColor.replace('1)', '0.6)')}`,
               aspectRatio: "1 / 1",
               height: "100%",
-              minHeight: "48px",
+              minHeight: size === "large" ? "48px" : undefined,
             }}
           >
             <div 
               className="absolute flex items-center justify-center"
               style={{
-                inset: pageSubtitle ? "8px" : "6px",
+                inset: finalDescription ? "8px" : "6px",
               }}
             >
-              <Icon 
+              <IconComponent 
                 style={{
                   width: "100%",
                   height: "100%",
                   maxWidth: "100%",
                   maxHeight: "100%",
-                  color: color,
+                  color: finalColor,
                 }}
               />
             </div>
           </div>
         )}
         <div className="flex flex-col justify-center">
-          <h1 className="font-header text-4xl text-primary uppercase tracking-wider border-b border-primary/30 pb-0.5 whitespace-nowrap">
-            {pageTitle}
-          </h1>
-          {pageSubtitle && (
-            <div className="font-mono text-[10px] text-text-secondary mt-0.5">
-              {pageSubtitle}
+          <h3 className={`font-header ${titleSize} text-primary uppercase tracking-wider border-b border-primary/30 pb-0.5 whitespace-nowrap`}>
+            {finalTitle}
+          </h3>
+          {finalDescription && (
+            <div className="font-mono text-xs text-text-secondary mt-0.5 whitespace-nowrap truncate">
+              {finalDescription}
             </div>
           )}
         </div>
       </div>
+      {actions && <div className="flex gap-1 items-center">{actions}</div>}
     </div>
   );
 }
+

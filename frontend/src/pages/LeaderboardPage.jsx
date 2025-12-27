@@ -7,6 +7,7 @@ import api from "../api";
 import UserTooltip from "../components/UserTooltip";
 import TextGlitch from "../components/TextGlitch";
 import Card from "../components/Card";
+import SectionHeader from "../components/SectionHeader";
 
 function XPProgressBar({ progress, nextRankXp }) {
   if (!nextRankXp) {
@@ -317,17 +318,13 @@ export default function LeaderboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3 mb-8">
-        <Trophy className="text-primary shrink-0" size={56} />
-        <div>
-          <h1 className="font-header text-4xl text-primary uppercase tracking-wider mb-0.5">
-            RANKING
-          </h1>
-          <p className="font-mono text-sm text-text-secondary">
-            Top użytkownicy według zdobytego XP
-          </p>
-        </div>
-      </div>
+      <SectionHeader 
+        icon={Trophy}
+        title="RANKING"
+        description="Top użytkownicy według zdobytego XP"
+        useRouteData
+        size="large"
+      />
 
       {renderSplitScreen()}
     </div>

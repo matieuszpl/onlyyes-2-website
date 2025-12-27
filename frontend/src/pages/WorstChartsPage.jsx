@@ -1,12 +1,14 @@
 import WorstChartsArchive from "../components/WorstChartsArchive";
-import PageHeader from "../components/layout/PageHeader";
+import SectionHeader from "../components/SectionHeader";
 
 export default function WorstChartsPage() {
   return (
     <div className="space-y-6">
-      <PageHeader 
+      <SectionHeader 
         title="LISTA GNIOTÓW"
-        subtitle="Najgorsze utwory według głosów społeczności"
+        description="Najgorsze utwory według głosów społeczności"
+        useRouteData
+        size="large"
       />
       <WorstChartsArchive />
     </div>

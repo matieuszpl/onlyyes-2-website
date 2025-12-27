@@ -4,6 +4,7 @@ import { Calendar, Clock } from "lucide-react";
 import api from "../api";
 import TextGlitch from "../components/TextGlitch";
 import Card from "../components/Card";
+import SectionHeader from "../components/SectionHeader";
 
 export default function SchedulePage() {
   const [shows, setShows] = useState([]);
@@ -215,16 +216,8 @@ export default function SchedulePage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 mb-8">
-          <Calendar className="text-primary hidden sm:block" size={32} />
-          <div>
-            <h1 className="font-header text-2xl sm:text-4xl text-primary uppercase tracking-wider mb-2">
-              KALENDARZ
-            </h1>
-            <p className="font-mono text-xs sm:text-sm text-text-secondary">
-              Harmonogram audycji na cały tydzień
-            </p>
-          </div>
+        <div className="mb-8">
+          <SectionHeader useRouteData size="large" />
         </div>
 
         {/* Skeleton loader dla Matrix View */}
@@ -277,17 +270,7 @@ export default function SchedulePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3 mb-8">
-        <Calendar className="text-primary shrink-0" size={56} />
-        <div>
-          <h1 className="font-header text-4xl text-primary uppercase tracking-wider mb-0.5">
-            KALENDARZ
-          </h1>
-          <p className="font-mono text-sm text-text-secondary">
-            Harmonogram audycji na cały tydzień
-          </p>
-        </div>
-      </div>
+      <SectionHeader useRouteData size="large" />
 
       {renderMatrixView()}
     </div>

@@ -8,7 +8,7 @@ from starlette.responses import RedirectResponse, StreamingResponse, JSONRespons
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 from pydantic import BaseModel
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict
 from datetime import datetime, timedelta, timezone
 import httpx
 import asyncio
@@ -18,6 +18,7 @@ from . import models, auth, config
 from .services.azuracast import azuracast_client
 from .services.event_broadcaster import event_broadcaster
 from .services.xp_system import XP_PER_VOTE, XP_PER_MINUTE_LISTENING, get_rank
+from .services.youtube import preview_content
 import logging
 
 logger = logging.getLogger(__name__)
@@ -1020,23 +1021,188 @@ class SuggestionCreateRequest(BaseModel):
     source_type: str
     thumbnail_url: Optional[str] = None
     duration_seconds: Optional[int] = None
+    youtube_id: Optional[str] = None
+    url: Optional[str] = None
+
+class SuggestionBatchCreateRequest(BaseModel):
+    items: List[Dict]
+
+class BulkUploadRequest(BaseModel):
+    drive_link: str
 
 @app.post("/api/suggestions/preview")
-async def preview_suggestion(preview: SuggestionPreviewRequest):
-    # TODO: Integracja z yt-dlp/YouTube API
-    return {
-        "title": "Mock Preview Title",
-        "artist": "Mock Preview Artist",
-        "thumbnail": None,
-        "source_type": "YOUTUBE",
-        "duration_seconds": 180
-    }
+async def preview_suggestion(preview: SuggestionPreviewRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    user = await auth.get_current_user(request, db)
+    
+    try:
+        result = preview_content(preview.input)
+        
+        if result.get('type') == 'error':
+            raise HTTPException(status_code=400, detail=result.get('message', 'Błąd podczas pobierania informacji'))
+        
+        async def check_existing_suggestions(items):
+            """Sprawdza które propozycje już istnieją dla użytkownika"""
+            if not user:
+                return {}
+            
+            existing_map = {}
+            now = datetime.now(timezone.utc)
+            cutoff = now - timedelta(days=30)
+            
+            for item in items:
+                youtube_id = item.get('youtube_id')
+                url = item.get('url', '')
+                
+                query = select(models.Suggestion).where(
+                    models.Suggestion.user_id == user.id,
+                    models.Suggestion.created_at >= cutoff
+                )
+                
+                if youtube_id:
+                    query = query.where(models.Suggestion.youtube_id == youtube_id)
+                elif url:
+                    query = query.where(models.Suggestion.raw_input == url)
+                else:
+                    continue
+                
+                result_db = await db.execute(query.order_by(desc(models.Suggestion.created_at)).limit(1))
+                existing = result_db.scalar_one_or_none()
+                
+                if existing:
+                    key = youtube_id or url
+                    existing_map[key] = {
+                        "id": existing.id,
+                        "status": existing.status,
+                        "created_at": existing.created_at.isoformat()
+                    }
+            
+            return existing_map
+        
+        if result.get('type') == 'playlist':
+            items = result.get('items', [])
+            existing_map = await check_existing_suggestions(items)
+            
+            enriched_items = []
+            for item in items:
+                key = item.get('youtube_id') or item.get('url', '')
+                existing = existing_map.get(key)
+                enriched_item = {**item}
+                if existing:
+                    enriched_item['existing'] = existing
+                enriched_items.append(enriched_item)
+            
+            return {
+                "type": "playlist",
+                "items": enriched_items,
+                "count": result.get('count', 0)
+            }
+        elif result.get('type') == 'single':
+            item = result.get('item', {})
+            items = [item]
+            existing_map = await check_existing_suggestions(items)
+            
+            key = item.get('youtube_id') or item.get('url', '')
+            existing = existing_map.get(key)
+            
+            response = {
+                "type": "single",
+                "title": item.get('title'),
+                "artist": item.get('artist'),
+                "thumbnail": item.get('thumbnail'),
+                "source_type": item.get('source_type', 'YOUTUBE'),
+                "duration_seconds": item.get('duration_seconds', 0),
+                "youtube_id": item.get('youtube_id'),
+                "url": item.get('url')
+            }
+            
+            if existing:
+                response['existing'] = existing
+            
+            return response
+        else:
+            raise HTTPException(status_code=400, detail="Nieznany typ wyniku")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Preview error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Błąd podczas przetwarzania: {str(e)}")
+
+async def check_suggestion_rate_limit(user_id: int, db: AsyncSession) -> Tuple[bool, int]:
+    """Sprawdza rate limiting dla propozycji. Zwraca (allowed, seconds_until_next)"""
+    now = datetime.now(timezone.utc)
+    
+    recent_count = await db.scalar(
+        select(func.count(models.Suggestion.id)).where(
+            models.Suggestion.user_id == user_id,
+            models.Suggestion.created_at >= now - timedelta(hours=1)
+        )
+    )
+    if recent_count is None:
+        recent_count = 0
+    
+    if recent_count < 5:
+        return (True, 0)
+    elif recent_count < 10:
+        return (True, 10)
+    elif recent_count < 20:
+        return (True, 30)
+    else:
+        last_suggestion = await db.scalar(
+            select(models.Suggestion.created_at).where(
+                models.Suggestion.user_id == user_id
+            ).order_by(desc(models.Suggestion.created_at)).limit(1)
+        )
+        if last_suggestion:
+            seconds_passed = (now - last_suggestion).total_seconds()
+            if seconds_passed < 60:
+                return (False, int(60 - seconds_passed))
+        return (True, 60)
+
+async def check_duplicate_suggestion(user_id: int, youtube_id: Optional[str], raw_input: str, db: AsyncSession) -> Optional[models.Suggestion]:
+    """Sprawdza czy propozycja już istnieje. Zwraca istniejącą propozycję lub None"""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=30)
+    
+    query = select(models.Suggestion).where(
+        models.Suggestion.user_id == user_id,
+        models.Suggestion.created_at >= cutoff
+    )
+    
+    if youtube_id:
+        query = query.where(models.Suggestion.youtube_id == youtube_id)
+    else:
+        query = query.where(models.Suggestion.raw_input == raw_input)
+    
+    result = await db.execute(query.order_by(desc(models.Suggestion.created_at)).limit(1))
+    return result.scalar_one_or_none()
 
 @app.post("/api/suggestions")
 async def create_suggestion(suggestion: SuggestionCreateRequest, request: Request, db: AsyncSession = Depends(get_db)):
     user = await auth.get_current_user(request, db)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    allowed, wait_seconds = await check_suggestion_rate_limit(user.id, db)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Zbyt wiele propozycji. Spróbuj ponownie za {wait_seconds} sekund."
+        )
+    
+    existing = await check_duplicate_suggestion(
+        user.id,
+        suggestion.youtube_id,
+        suggestion.input,
+        db
+    )
+    
+    if existing:
+        return {
+            "status": "duplicate",
+            "id": existing.id,
+            "message": "Ta propozycja została już wysłana",
+            "existing_status": existing.status
+        }
     
     new_suggestion = models.Suggestion(
         user_id=user.id,
@@ -1046,6 +1212,7 @@ async def create_suggestion(suggestion: SuggestionCreateRequest, request: Reques
         artist=suggestion.artist,
         thumbnail_url=suggestion.thumbnail_url,
         duration_seconds=suggestion.duration_seconds,
+        youtube_id=suggestion.youtube_id,
         status="PENDING"
     )
     db.add(new_suggestion)
@@ -1056,16 +1223,93 @@ async def create_suggestion(suggestion: SuggestionCreateRequest, request: Reques
     
     return {"status": "success", "id": new_suggestion.id}
 
+@app.post("/api/suggestions/batch")
+async def create_suggestions_batch(batch: SuggestionBatchCreateRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    user = await auth.get_current_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if not batch.items or len(batch.items) == 0:
+        raise HTTPException(status_code=400, detail="Brak utworów do dodania")
+    
+    if len(batch.items) > 50:
+        raise HTTPException(status_code=400, detail="Maksymalnie 50 utworów na raz")
+    
+    allowed, wait_seconds = await check_suggestion_rate_limit(user.id, db)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Zbyt wiele propozycji. Spróbuj ponownie za {wait_seconds} sekund."
+        )
+    
+    created_ids = []
+    duplicate_ids = []
+    skipped_count = 0
+    
+    for item in batch.items:
+        raw_input = item.get('input', item.get('url', ''))
+        youtube_id = item.get('youtube_id')
+        
+        existing = await check_duplicate_suggestion(user.id, youtube_id, raw_input, db)
+        
+        if existing:
+            duplicate_ids.append({
+                "youtube_id": youtube_id,
+                "title": item.get('title'),
+                "existing_id": existing.id,
+                "existing_status": existing.status
+            })
+            skipped_count += 1
+            continue
+        
+        new_suggestion = models.Suggestion(
+            user_id=user.id,
+            raw_input=raw_input,
+            source_type=item.get('source_type', 'YOUTUBE'),
+            title=item.get('title'),
+            artist=item.get('artist'),
+            thumbnail_url=item.get('thumbnail_url') or item.get('thumbnail'),
+            duration_seconds=item.get('duration_seconds', 0),
+            youtube_id=youtube_id,
+            status="PENDING"
+        )
+        db.add(new_suggestion)
+        created_ids.append(new_suggestion)
+    
+    await db.commit()
+    
+    for suggestion in created_ids:
+        await db.refresh(suggestion)
+    
+    if len(created_ids) > 0:
+        await _check_and_award_badges_internal(user.id, "SUGGESTIONS", db)
+    
+    return {
+        "status": "success",
+        "count": len(created_ids),
+        "skipped": skipped_count,
+        "ids": [s.id for s in created_ids],
+        "duplicates": duplicate_ids
+    }
+
 @app.get("/api/suggestions")
 async def get_suggestions(request: Request, db: AsyncSession = Depends(get_db)):
     user = await auth.get_current_user(request, db)
-    if not user or not user.is_admin:
-        raise HTTPException(status_code=403, detail="Admin only")
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     
-    result = await db.execute(
-        select(models.Suggestion).order_by(desc(models.Suggestion.created_at))
-    )
-    suggestions = result.scalars().all()
+    if user.is_admin:
+        result = await db.execute(
+            select(models.Suggestion).order_by(desc(models.Suggestion.created_at))
+        )
+        suggestions = result.scalars().all()
+    else:
+        result = await db.execute(
+            select(models.Suggestion)
+            .where(models.Suggestion.user_id == user.id)
+            .order_by(desc(models.Suggestion.created_at))
+        )
+        suggestions = result.scalars().all()
     
     return [
         {
@@ -1075,6 +1319,8 @@ async def get_suggestions(request: Request, db: AsyncSession = Depends(get_db)):
             "source_type": s.source_type,
             "title": s.title,
             "artist": s.artist,
+            "thumbnail_url": s.thumbnail_url,
+            "youtube_id": s.youtube_id,
             "status": s.status,
             "created_at": s.created_at.isoformat()
         }
@@ -1113,6 +1359,51 @@ async def reject_suggestion(suggestion_id: int, request: Request, db: AsyncSessi
     suggestion.status = "REJECTED"
     await db.commit()
     return {"status": "success"}
+
+def is_valid_google_drive_link(url: str) -> bool:
+    """Sprawdza czy link jest do Google Drive"""
+    if not url or not url.strip():
+        return False
+    
+    patterns = [
+        r'^https?://(drive\.google\.com|docs\.google\.com)',
+        r'^https?://.*google.*drive',
+    ]
+    
+    import re
+    return any(re.search(pattern, url.strip(), re.IGNORECASE) for pattern in patterns)
+
+@app.post("/api/suggestions/bulk-upload")
+async def bulk_upload_suggestion(bulk: BulkUploadRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    user = await auth.get_current_user(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if not is_valid_google_drive_link(bulk.drive_link):
+        raise HTTPException(status_code=400, detail="Akceptujemy tylko linki do Google Drive")
+    
+    allowed, wait_seconds = await check_suggestion_rate_limit(user.id, db)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Zbyt wiele propozycji. Spróbuj ponownie za {wait_seconds} sekund."
+        )
+    
+    new_suggestion = models.Suggestion(
+        user_id=user.id,
+        raw_input=bulk.drive_link,
+        source_type="GOOGLE_DRIVE",
+        title="Paczka utworów z Google Drive",
+        artist="Bulk Upload",
+        status="PENDING"
+    )
+    db.add(new_suggestion)
+    await db.commit()
+    await db.refresh(new_suggestion)
+    
+    await _check_and_award_badges_internal(user.id, "SUGGESTIONS", db)
+    
+    return {"status": "success", "id": new_suggestion.id, "message": "Propozycja wysłana! Administrator przetworzy pliki."}
 
 # --- CHARTS ---
 

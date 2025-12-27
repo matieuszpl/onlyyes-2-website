@@ -1,6 +1,31 @@
-import { useState, useEffect } from "react";
-import { Clock } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import Card from "./Card";
+
+const DigitSlot = ({ digit, positionKey }) => {
+  const prevDigitRef = useRef(digit);
+  const [key, setKey] = useState(0);
+
+  useEffect(() => {
+    if (digit !== prevDigitRef.current) {
+      setKey(prev => prev + 1);
+      prevDigitRef.current = digit;
+    }
+  }, [digit]);
+
+  return (
+    <motion.span
+      key={`${positionKey}-${key}`}
+      className="inline-block"
+      style={{ transformOrigin: "center" }}
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+    >
+      {digit}
+    </motion.span>
+  );
+};
 
 export default function TimeDisplay() {
   const [time, setTime] = useState(new Date());
@@ -13,11 +38,10 @@ export default function TimeDisplay() {
   }, []);
 
   const formatTime = (date) => {
-    return date.toLocaleTimeString("pl-PL", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    return { hours, minutes, seconds };
   };
 
   const formatDate = (date) => {
@@ -28,18 +52,29 @@ export default function TimeDisplay() {
     });
   };
 
+  const { hours, minutes, seconds } = formatTime(time);
+  const date = formatDate(time);
+
   return (
     <Card className="relative">
-
-      <div className="flex items-center gap-3">
-        <Clock size={20} className="text-primary" />
-        <div>
-          <div className="font-mono text-sm font-bold text-primary">
-            {formatTime(time)}
+      <div className="flex items-center justify-between">
+        <div className="flex items-baseline gap-1">
+          <div className="font-mono text-3xl font-bold text-primary">
+            {hours.split("").map((digit, idx) => (
+              <DigitSlot key={`h-${idx}`} digit={digit} positionKey={`h-${idx}`} />
+            ))}
+            :
+            {minutes.split("").map((digit, idx) => (
+              <DigitSlot key={`m-${idx}`} digit={digit} positionKey={`m-${idx}`} />
+            ))}
+            :
+            {seconds.split("").map((digit, idx) => (
+              <DigitSlot key={`s-${idx}`} digit={digit} positionKey={`s-${idx}`} />
+            ))}
           </div>
-          <div className="font-mono text-xs text-text-secondary">
-            {formatDate(time)}
-          </div>
+        </div>
+        <div className="font-mono text-sm text-text-secondary text-right">
+          {date}
         </div>
       </div>
     </Card>

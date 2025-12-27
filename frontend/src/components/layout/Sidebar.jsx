@@ -37,19 +37,24 @@ export default function Sidebar({ isOpen, onClose }) {
     { path: "/", icon: Home, label: "GŁÓWNA" },
     { path: "/charts", icon: TrendingUp, label: "LISTA PRZEBOJÓW" },
     { path: "/worst-charts", icon: TrendingDown, label: "LISTA GNIOTÓW" },
-    { path: "/schedule", icon: Calendar, label: "KALENDARZ" },
-    { path: "/changelog", icon: GitBranch, label: "CHANGELOG" },
   ];
 
   if (user) {
-    navItems.push({ path: "/leaderboard", icon: Trophy, label: "RANKING" });
     navItems.push({ path: "/requests", icon: Music, label: "PROPOZYCJE" });
+  }
+
+  navItems.push({ path: "/schedule", icon: Calendar, label: "KALENDARZ" });
+
+  if (user) {
+    navItems.push({ path: "/leaderboard", icon: Trophy, label: "RANKING" });
     navItems.push({ path: "/badges", icon: Award, label: "OSIĄGNIĘCIA" });
     navItems.push({ path: "/profile", icon: User, label: "PROFIL" });
     if (user.is_admin) {
       navItems.push({ path: "/admin", icon: Shield, label: "ADMIN" });
     }
   }
+
+  navItems.push({ path: "/changelog", icon: GitBranch, label: "CHANGELOG" });
 
   const handleKioskMode = () => {
     navigate("/?mode=kiosk");
@@ -366,12 +371,22 @@ export default function Sidebar({ isOpen, onClose }) {
               to={item.path}
               onClick={handleLinkClick}
               className={cn(
-                "flex items-center gap-2.5 px-3 py-2 font-mono text-xs transition-all rounded-sm",
+                "relative flex items-center gap-2.5 px-3 py-2 font-mono text-xs transition-all",
                 isActive
-                  ? "bg-primary/20 text-primary border-l-2 border-primary"
-                  : "text-text-secondary hover:text-primary hover:bg-white/5"
+                  ? "bg-primary/20 text-primary border-l-2 border-primary rounded-none"
+                  : "text-text-secondary hover:text-primary hover:bg-white/5 rounded-sm"
               )}
             >
+              {isActive && (
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary"
+                  style={{
+                    boxShadow: "0 0 8px rgba(var(--primary-rgb), 0.8), 0 0 16px rgba(var(--primary-rgb), 0.5)",
+                    filter: "blur(0.5px)",
+                    transform: "translateX(-1px)",
+                  }}
+                />
+              )}
               <Icon size={16} />
               {item.label}
             </Link>
@@ -421,7 +436,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed left-0 top-0 h-full w-64 bg-black/95 backdrop-blur-xl border-r border-white/5 flex-col z-50 md:hidden flex pb-16"
+                className="fixed left-0 top-0 h-full w-64 bg-black backdrop-blur-xl border-r border-white/5 flex-col z-50 md:hidden flex pb-16"
               >
                 {sidebarContent}
               </motion.aside>
@@ -429,7 +444,7 @@ export default function Sidebar({ isOpen, onClose }) {
           )}
         </AnimatePresence>
       )}
-      <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col z-30">
+      <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-black backdrop-blur-xl border-r border-white/5 flex-col z-30">
         {sidebarContent}
       </aside>
     </>
